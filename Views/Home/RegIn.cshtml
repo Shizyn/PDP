@@ -1,0 +1,207 @@
+﻿@model DP.Models.RegInModel
+
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7-beta.19/jquery.inputmask.min.js"></script>
+</head>
+
+<div class="registration-container">
+    <h1>Зарегистрироваться</h1>
+
+    <p>Уже есть аккаунт? <a href="/home/login" class="login-link">Войти</a></p>
+
+    <form asp-action="RegIn" method="post" asp-antiforgery="true" class="registration-form">
+        <div class="form-group">
+            <label asp-for="FullName" class="form-label"></label>
+            <input asp-for="FullName" class="form-input" name="FullName" placeholder="Введите ваше ФИО" />
+            <span asp-validation-for="FullName" class="validation-error text-danger"></span>
+        </div>
+
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $("#Phone").inputmask("8(999)-999-99-99");
+            });
+        </script>
+
+        <div class="form-group">
+            <label asp-for="Phone" class="form-label"></label>
+            <input asp-for="Phone" id="Phone" class="form-input" name="Phone" placeholder="8(XXX)-XXX-XX-XX" />
+            <span asp-validation-for="Phone" class="validation-error text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" class="form-input" name="Email" placeholder="Введите ваш email" />
+            <span asp-validation-for="Email" class="validation-error text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Password" class="form-label"></label>
+            <input asp-for="Password" type="password" class="form-input" name="Password" placeholder="Введите пароль" />
+            <span asp-validation-for="Password" class="validation-error text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn-submit">Зарегистрироваться</button>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        <ul>
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
+}
+
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f0f6fc;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+        background-image: url(/images/newkvant2.png);
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center;
+    }
+
+    .registration-container {
+        background-color: rgba(255, 255, 255, 0.95);
+        padding: 40px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        width: 100%;
+        max-width: 450px;
+        text-align: center;
+        border-top: 5px solid #0056b3;
+    }
+
+    h1 {
+        font-size: 28px;
+        margin-bottom: 5px;
+        color: #0056b3;
+        font-weight: 600;
+    }
+
+    h2 {
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: #333;
+        font-weight: 500;
+    }
+
+    .login-link {
+        color: #d52b1e;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+
+        .login-link:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+
+    .registration-form {
+        margin-top: 25px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+        text-align: left;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px 15px;
+        font-size: 16px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        transition: border-color 0.3s;
+    }
+
+        .form-input:focus {
+            border-color: #0056b3;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
+        }
+
+    .validation-error {
+        color: #d52b1e;
+        font-size: 14px;
+        margin-top: 5px;
+        display: block;
+    }
+
+    .btn-submit {
+        background-color: #d52b1e;
+        color: white;
+        border: none;
+        padding: 14px;
+        font-size: 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        width: 100%;
+        font-weight: 600;
+        transition: background-color 0.3s;
+        margin-top: 10px;
+    }
+
+        .btn-submit:hover {
+            background-color: #b82217;
+        }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        text-align: left;
+        border: 1px solid #f5c6cb;
+    }
+
+        .alert-danger ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .alert-danger li {
+            margin-bottom: 5px;
+        }
+
+    @@media (max-width: 768px) {
+        .registration-container {
+            padding: 25px;
+            margin: 15px;
+        }
+
+        h1 {
+            font-size: 24px;
+        }
+
+        h2 {
+            font-size: 20px;
+        }
+    }
+</style>

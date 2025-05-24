@@ -1,0 +1,194 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7-beta.19/jquery.inputmask.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создать новую заявку</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0056b3 0%, #d52b1e 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .booking-container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            border-top: 5px solid #0056b3;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #0056b3;
+            margin-bottom: 25px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            font-weight: 500;
+            color: #333;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 15px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+            select:focus, input:focus {
+                border-color: #0056b3;
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
+            }
+
+        .btn-submit {
+            background-color: #d52b1e;
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+            .btn-submit:hover {
+                background-color: #b82217;
+            }
+
+        .btn {
+            display: inline-block;
+            background-color: #0056b3;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.3s;
+            margin-top: 15px;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+            .btn:hover {
+                background-color: #003d82;
+            }
+
+        .alert {
+            margin-top: 20px;
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+            .alert p {
+                margin: 5px 0;
+            }
+
+        @@media (max-width: 768px) {
+            .booking-container {
+                padding: 25px 20px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            select, input {
+                padding: 10px 12px;
+            }
+
+            .btn-submit, .btn {
+                padding: 12px;
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="booking-container">
+        <h1>Создать новую заявку</h1>
+        <form method="post">
+            <div class="form-group">
+                <label for="fullName">ФИО:</label>
+                <input type="text" id="fullName" name="fullName" required />
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required />
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Телефон:</label>
+                <input type="tel" id="phone" name="phoneNumber" placeholder="8(XXX)-XXX-XX-XX" required />
+            </div>
+
+            <div class="form-group">
+                <label for="schoolName">Учебное заведение:</label>
+                <input type="text" id="schoolName" name="schoolName" required />
+            </div>
+
+            <div class="form-group">
+                <label for="bookingDate">Дата экскурсии:</label>
+                <input type="date" id="bookingDate" name="bookingDate" required />
+            </div>
+
+            <div class="form-group">
+                <label for="timeRange">Количество человек:</label>
+                <input type="text" id="timeRange" name="timeRange" required />
+            </div>
+
+            <button type="submit" class="btn-submit">Отправить заявку</button>
+            <a href="/Booking" class="btn">Назад</a>
+        </form>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <p>@error.ErrorMessage</p>
+                }
+            </div>
+        }
+    </div>
+</body>
+</html>

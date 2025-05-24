@@ -1,0 +1,194 @@
+﻿@model DP.Models.LoginModel
+<div class="login-container">
+    <h1>Вход для администратора</h1>
+
+    <form asp-action="Login" method="post" asp-antiforgery="true" class="login-form">
+        <div class="form-group">
+            <label asp-for="Login" class="form-label"></label>
+            <input asp-for="Login" class="form-input" name="username" placeholder="Введите ваш логин" />
+            <span asp-validation-for="Login" class="validation-error text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Password" class="form-label"></label>
+            <input asp-for="Password" type="password" class="form-input" name="password" placeholder="Введите пароль" />
+            <span asp-validation-for="Password" class="validation-error text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn-submit">Войти</button>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        <ul>
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
+}
+
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background: linear-gradient(135deg, #0056b3 0%, #d52b1e 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+    }
+
+    .login-container {
+        background-color: #fff;
+        padding: 40px;
+        border-radius: 8px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        width: 100%;
+        max-width: 450px;
+        text-align: center;
+        border-top: 5px solid #0056b3;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .login-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 30px;
+            height: 30px;
+            background-color: #d52b1e;
+            clip-path: polygon(0 0, 100% 0, 100% 100%);
+        }
+
+    h1 {
+        font-size: 24px;
+        color: #0056b3;
+        margin-bottom: 30px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .login-form {
+        margin-top: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+        text-align: left;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #333;
+        display: block;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 12px 15px;
+        font-size: 15px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        box-sizing: border-box;
+        transition: all 0.3s ease;
+    }
+
+        .form-input:focus {
+            border-color: #0056b3;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
+        }
+
+    .validation-error {
+        color: #d52b1e;
+        font-size: 13px;
+        margin-top: 5px;
+        display: block;
+    }
+
+    .btn-submit {
+        background-color: #d52b1e;
+        color: white;
+        border: none;
+        padding: 14px;
+        font-size: 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        width: 100%;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 10px;
+    }
+
+        .btn-submit:hover {
+            background-color: #b82217;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(213, 43, 30, 0.3);
+        }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 4px;
+        margin-top: 20px;
+        text-align: left;
+        border: 1px solid #f5c6cb;
+    }
+
+        .alert-danger ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .alert-danger li {
+            margin-bottom: 5px;
+        }
+
+    @@media (max-width: 768px) {
+        .login-container {
+            padding: 30px 20px;
+        }
+
+        h1 {
+            font-size: 20px;
+        }
+
+        .form-input {
+            padding: 10px 12px;
+            font-size: 14px;
+        }
+
+        .btn-submit {
+            padding: 12px;
+            font-size: 15px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        body {
+            padding: 15px;
+        }
+
+        .login-container {
+            padding: 25px 15px;
+        }
+    }
+</style>

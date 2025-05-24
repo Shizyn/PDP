@@ -1,0 +1,221 @@
+﻿@model DP.Models.ExcursionBooking
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Редактировать экскурсию</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0056b3 0%, #d52b1e 100%);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .booking-container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 500px;
+            border-top: 5px solid #0056b3;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .booking-container::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 40px;
+                height: 40px;
+                background-color: #d52b1e;
+                clip-path: polygon(0 0, 100% 0, 100% 100%);
+            }
+
+        h1 {
+            font-size: 24px;
+            color: #0056b3;
+            margin-bottom: 25px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            font-weight: 500;
+            color: #333;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 15px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+            input:focus, select:focus {
+                border-color: #0056b3;
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
+            }
+
+        .btn-submit {
+            background-color: #d52b1e;
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+            .btn-submit:hover {
+                background-color: #b82217;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(213, 43, 30, 0.3);
+            }
+
+        .btn {
+            display: inline-block;
+            background-color: #0056b3;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.3s;
+            margin-top: 15px;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+            .btn:hover {
+                background-color: #003d82;
+            }
+
+        @@media (max-width: 768px) {
+            .booking-container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            input, select {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+
+            .btn-submit, .btn {
+                padding: 12px;
+                font-size: 15px;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+
+            .booking-container {
+                padding: 25px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="booking-container">
+        <h1>@ViewData["Title"]</h1>
+
+        <form method="post" class="form-container">
+            <input type="hidden" asp-for="Id" />
+
+            <div class="form-group">
+                <label>ФИО:</label>
+                <input asp-for="FullName" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label>Email:</label>
+                <input asp-for="Email" type="email" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label>Телефон:</label>
+                <input asp-for="PhoneNumber" class="form-control" required
+                       pattern="\+?[0-9\s\-\(\)]{10,}" />
+            </div>
+
+            <div class="form-group">
+                <label>Учебное заведение:</label>
+                <input asp-for="SchoolName" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label>Дата экскурсии:</label>
+                <input asp-for="BookingDate" type="date" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label>Количество человек:</label>
+                <input asp-for="TimeRange" class="form-control" required />
+            </div>
+
+            <div class="form-group">
+                <label>Статус:</label>
+                <select asp-for="Status" class="form-control" required>
+                    <option value="Новое">Новое</option>
+                    <option value="Подтверждено">Подтверждено</option>
+                    <option value="Отклонено">Отклонено</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-submit">Сохранить изменения</button>
+            <a href="@Url.Action("Index", "Admin")" class="btn btn-secondary">Назад</a>
+        </form>
+    </div>
+
+    @section Scripts {
+        <script>
+            $(document).ready(function() {
+                // Маска для телефона
+                $("#PhoneNumber").inputmask("+7(999)999-99-99");
+            });
+        </script>
+    }
+</body>
+</html>
