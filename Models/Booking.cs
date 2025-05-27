@@ -39,6 +39,7 @@ namespace DP.Models
         public string TypeEvent { get; set; }
         [Required]
         public string TimeRange { get; set; }
+        public int PeopleCount { get; set; }
         [Required]
         public DateTime BookingDate { get; set; }
         [Required]

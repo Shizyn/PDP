@@ -120,7 +120,7 @@ namespace DP.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create(string eventType, int profProbaId, int eventId, string fullName, string email, string phoneNumber, string schoolName, DateTime bookingDate, string timeRange)
+        public IActionResult Create(string eventType, int profProbaId, int eventId, string fullName, string email, string phoneNumber, string schoolName, DateTime bookingDate, string timeRange, int peopleCount)
         {
             var userEmail = HttpContext.Session.GetString("UserEmail");
             var user = _context.Users.FirstOrDefault(u => u.Email == userEmail);
@@ -148,7 +148,13 @@ namespace DP.Controllers
                     ViewBag.Events = _context.Events.ToList();
                     return View(); //возвращаем представление с ошибками
                 }
-
+                if (peopleCount < 1 || peopleCount > 30)
+                {
+                    ModelState.AddModelError("peopleCount", "Можно записать от 1 до 30 человек.");
+                    ViewBag.ProfProby = _context.ProfProby.ToList();
+                    ViewBag.Events = _context.Events.ToList();
+                    return View();
+                }
                 //создание новой заявки
                 var booking = new Booking
                 {
@@ -162,6 +168,7 @@ namespace DP.Controllers
                     SchoolName = schoolName,
                     BookingDate = bookingDate,
                     TimeRange = timeRange,
+                    PeopleCount = peopleCount,
                     Status = "Новое",
                     UserId = user.UserId
                 };
@@ -182,6 +189,33 @@ namespace DP.Controllers
                 ViewBag.ProfProby = _context.ProfProby.ToList();
                 return View();
             }
+        }
+        // Получить доступные даты
+        public IActionResult GetAvailableDates(int profProbaId, int eventId)
+        {
+            var dates = _context.AvailableSlots
+                .Where(s => s.ProfProbaId == profProbaId && s.EventID == eventId)
+                .Select(s => s.SlotDate)
+                .Distinct()
+                .OrderBy(d => d)
+                .ToList();
+            return Json(dates.Select(d => d.ToString("yyyy-MM-dd")));
+        }
+
+        public IActionResult GetAvailableTimes(int profProbaId, int eventId, DateTime date)
+        {
+            var bookedTimes = _context.Bookings
+                .Where(b => b.ProfProbaId == profProbaId && b.EventId == eventId && b.BookingDate == date)
+                .Select(b => b.TimeRange)
+                .ToList();
+
+            var times = _context.AvailableSlots
+                .Where(s => s.ProfProbaId == profProbaId && s.EventID == eventId && s.SlotDate == date)
+                .Select(s => s.TimeRange)
+                .ToList();
+
+            var freeTimes = times.Except(bookedTimes).ToList();
+            return Json(freeTimes);
         }
 
         [HttpGet]

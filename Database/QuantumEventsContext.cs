@@ -13,6 +13,7 @@ namespace DP.Database
         public DbSet<Event> Events { get; set; }
         public DbSet<ProfProba> ProfProby { get; set; }
         public DbSet<ExcursionBooking> ExcursionBookings { get; set; }
+        public DbSet<AvailableSlot> AvailableSlots { get; set; }
 
         public DbSet<UploadedFile> UploadedFiles { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
