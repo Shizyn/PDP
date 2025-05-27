@@ -226,17 +226,14 @@
 </head>
 <body>
     <h1 class="centered">Заявки клиентов</h1>
-    @* <div class="button-container">
-        <a href="@Url.Action("ExportToExcel", "Admin")" class="export-button" download="Заявки.xlsx">Экспорт в Excel</a>
-    </div> *@
+
+    <!-- Предварительные заявки -->
     @if (Model != null && Model.Bookings != null && Model.Bookings.Any())
     {
         <h2>Предварительные заявки</h2>
         <table>
             <thead>
                 <tr>
-                    @* <th>ID</th>
-                    <th>Тип мероприятия</th> *@
                     <th>Профпроба</th>
                     <th>Событие</th>
                     <th>ФИО</th>
@@ -244,7 +241,7 @@
                     <th>Телефон</th>
                     <th>Учебное заведение</th>
                     <th>Дата</th>
-                    <th>Временный диапазон</th>
+                    <th>Кол-во человек</th>
                     <th>Статус</th>
                     <th>Действия</th>
                 </tr>
@@ -252,9 +249,7 @@
             <tbody>
                 @foreach (var booking in Model.Bookings)
                 {
-                    <tr style="@(booking.Status == "Новое" ? "background-color:#f2f2f2;" : booking.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : booking.Status == "Отклонено" ? "background-color:#ffa5a557;": "")">
-                        @* <td>@booking.ID</td>
-                        <td>@booking.TypeEvent</td> *@
+                    <tr style="@(booking.Status == "Новое" ? "background-color:#f2f2f2;" : booking.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : booking.Status == "Отклонено" ? "background-color:#ffa5a557;" : "")">
                         <td>@booking.ProfProba?.Name</td>
                         <td>@booking.Event?.Name</td>
                         <td>@booking.FullName</td>
@@ -264,17 +259,6 @@
                         <td>@booking.BookingDate.ToString("dd.MM.yyyy")</td>
                         <td>@booking.TimeRange</td>
                         <td>@booking.Status</td>
-                        @* <td>
-                            @if (booking.Files != null && booking.Files.Any())
-                            {
-                                foreach (var file in booking.Files)
-                                {
-                                    <a href="@Url.Action("DownloadFile", new { id = file.Id })">@file.FileName</a>
-
-                                    <br>
-                                }
-                            }
-                        </td> *@
                         <td>
                             @if (booking.Status == "Новое")
                             {
@@ -291,7 +275,6 @@
                                     <button type="submit">Редактировать</button>
                                 </form>
                             }
-
                             @if (booking.Status == "Подтверждено")
                             {
                                 <form method="get" action="/Admin/Update">
@@ -299,7 +282,6 @@
                                     <button type="submit">Редактировать</button>
                                 </form>
                             }
-
                             <form method="post" action="/Admin/Delete">
                                 <input type="hidden" name="id" value="@booking.ID" />
                                 <button type="submit" onclick="return confirm('Вы уверены, что хотите удалить эту заявку?');">Удалить</button>
@@ -309,8 +291,12 @@
                 }
             </tbody>
         </table>
+    }
+    <!-- Заявки на экскурсии -->
+    @if (Model.Excursions != null && Model.Excursions.Any())
+    {
         <h2>Заявки на экскурсии</h2>
-        <table class="table">
+        <table>
             <thead>
                 <tr>
                     <th>ФИО</th>
@@ -325,8 +311,7 @@
             <tbody>
                 @foreach (var excursion in Model.Excursions)
                 {
-
-                    <tr style="@(excursion.Status == "Новое" ? "background-color:#f2f2f2;" : excursion.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : excursion.Status == "Отклонено" ? "background-color:#ffa5a557;": "")">
+                    <tr style="@(excursion.Status == "Новое" ? "background-color:#f2f2f2;" : excursion.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : excursion.Status == "Отклонено" ? "background-color:#ffa5a557;" : "")">
                         <td>@excursion.FullName</td>
                         <td>@excursion.Email</td>
                         <td>@excursion.SchoolName</td>
@@ -355,62 +340,59 @@
                 }
             </tbody>
         </table>
-        <h2>Окончательные заявки (с прикрепленными файлами)</h2>
-        @if (Model.FinalBookings != null && Model.FinalBookings.Any())
-        {
-            <table>
-                <thead>
+    }
+    <!-- Окончательные заявки -->
+    <h2>Окончательные заявки (с прикрепленными файлами)</h2>
+    @if (Model.FinalBookings != null && Model.FinalBookings.Any())
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Тип</th>
+                    <th>Квантум</th>
+                    <th>Событие</th>
+                    <th>ФИО</th>
+                    <th>Email</th>
+                    <th>Телефон</th>
+                    <th>Файлы</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var booking in Model.FinalBookings)
+                {
                     <tr>
-                        <th>ID</th>
-                        <th>Тип</th>
-                        <th>Квантум</th>
-                        <th>Событие</th>
-                        <th>ФИО</th>
-                        <th>Email</th>
-                        <th>Телефон</th>
-                        <th>Файлы</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var booking in Model.FinalBookings)
-                    {
-                        <tr>
-                            <td>@booking.ID</td>
-                            <td>@booking.TypeEvent</td>
-                            <td>@booking.ProfProba?.Name</td>
-                            <td>@booking.Event?.Name</td>
-                            <td>@booking.FullName</td>
-                            <td>@booking.Email</td>
-                            <td>@booking.PhoneNumber</td>
-                            <td>
-                                @foreach (var file in booking.Files)
-                                {
-                                    <a href="@Url.Action("DownloadFile", "Admin", new { id = file.Id })">
-                                        @file.FileName (@file.FileType)
-                                    </a>
+                        <td>@booking.ID</td>
+                        <td>@booking.TypeEvent</td>
+                        <td>@booking.ProfProba?.Name</td>
+                        <td>@booking.Event?.Name</td>
+                        <td>@booking.FullName</td>
+                        <td>@booking.Email</td>
+                        <td>@booking.PhoneNumber</td>
+                        <td>
+                            @foreach (var file in booking.Files)
+                            {
+                                <a href="@Url.Action("DownloadFile", "Admin", new { id = file.Id })">@file.FileName</a>
 
-                                    <br>
-                                }
-                            </td>
-                            <td>
-                                <form method="post" action="@Url.Action("DeleteFinalBooking", "Admin")"
-                                      onsubmit="return confirm('Удалить заявку и все файлы?');">
-                                    <input type="hidden" name="id" value="@booking.ID" />
-                                    <button type="submit">Удалить</button>
-                                </form>
-                                <a href="@Url.Action("UpdateFinalBooking", "Admin", new { id = booking.ID })"
-                                   class="btn-edit">Редактировать</a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        }
-        else
-        {
-            <p>Нет заявок с прикрепленными файлами</p>
-        }
+                                <br />
+                            }
+                        </td>
+                        <td>
+                            <form method="post" action="@Url.Action("DeleteFinalBooking", "Admin")" onsubmit="return confirm('Удалить заявку и все файлы?');">
+                                <input type="hidden" name="id" value="@booking.ID" />
+                                <button type="submit">Удалить</button>
+                            </form>
+                            <a href="@Url.Action("UpdateFinalBooking", "Admin", new { id = booking.ID })" class="btn-edit">Редактировать</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>Нет заявок с прикрепленными файлами</p>
     }
 
 </body>

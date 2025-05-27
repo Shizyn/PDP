@@ -180,33 +180,28 @@
     <div class="container">
         <h1 class="centered">Все заявки</h1>
 
+        <!-- Заявки на профпробы -->
         @if (Model != null && Model.Any())
         {
-            // Предварительные заявки
             <h2 class="section-title">Заявки на профпробы</h2>
             <table>
                 <thead>
-
                     <tr>
-                        @* <th>ID</th> *@
-                        @* <th>Тип мероприятия</th> *@
                         <th>Профпроба</th>
                         <th>Событие</th>
                         <th>ФИО</th>
                         <th>Email</th>
                         <th>Телефон</th>
-						<th>Учебное заведение</th>
-						<th>Дата</th>
-						<th>Количество людей</th>
+                        <th>Учебное заведение</th>
+                        <th>Дата</th>
+                        <th>Время</th>
                         <th>Статус</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var booking in Model)
                     {
-                        <tr style="@(booking.Status == "Новое" ? "background-color:#f2f2f2;" : booking.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : booking.Status == "Отклонено" ? "background-color:#ffa5a557;": "")">
-                            @* <td>@booking.ID</td> *@
-                            @* <td>@booking.TypeEvent</td> *@
+                        <tr style="@(booking.Status == "Новое" ? "background-color:#f2f2f2;" : booking.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : booking.Status == "Отклонено" ? "background-color:#ffa5a557;" : "")">
                             <td>@booking.ProfProba?.Name</td>
                             <td>@booking.Event?.Name</td>
                             <td>@booking.FullName</td>
@@ -216,13 +211,15 @@
                             <td>@booking.BookingDate.ToString("dd.MM.yyyy")</td>
                             <td>@booking.TimeRange</td>
                             <td>@booking.Status</td>
-
                         </tr>
                     }
                 </tbody>
             </table>
-            @if (ViewBag.Excursions != null && (ViewBag.Excursions as List<DP.Models.ExcursionBooking>).Any())
-            {
+        }
+
+        <!-- Заявки на экскурсии -->
+        @if (ViewBag.Excursions != null && (ViewBag.Excursions as List<DP.Models.ExcursionBooking>).Any())
+        {
             <h2 class="section-title">Заявки на экскурсии</h2>
             <table>
                 <thead>
@@ -230,30 +227,33 @@
                         <th>ФИО</th>
                         <th>Email</th>
                         <th>Телефон</th>
-						<th>Школа</th>
-						<th>Дата</th>
-						<th>Количество людей</th>
+                        <th>Школа</th>
+                        <th>Дата</th>
+                        <th>Время</th>
                         <th>Статус</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var excursion in ViewBag.Excursions as List<DP.Models.ExcursionBooking>)
                     {
-                            <tr style="@(excursion.Status == "Новое" ? "background-color:#f2f2f2;" : excursion.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : excursion.Status == "Отклонено" ? "background-color:#ffa5a557;": "")">
+                        <tr style="@(excursion.Status == "Новое" ? "background-color:#f2f2f2;" : excursion.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : excursion.Status == "Отклонено" ? "background-color:#ffa5a557;" : "")">
                             <td>@excursion.FullName</td>
                             <td>@excursion.Email</td>
                             <td>@excursion.PhoneNumber</td>
                             <td>@excursion.SchoolName</td>
                             <td>@excursion.BookingDate.ToShortDateString()</td>
                             <td>@excursion.TimeRange</td>
-                            <td class="status">@excursion.Status</td>
+                            <td>@excursion.Status</td>
                         </tr>
                     }
                 </tbody>
             </table>
-            }
-        
-            <h2>Окончательные заявки</h2>
+        }
+
+        <!-- Окончательные заявки -->
+        <h2>Окончательные заявки</h2>
+        @if (Model != null && Model.Any(b => b.Files != null && b.Files.Any()))
+        {
             <table>
                 <thead>
                     <tr>
@@ -264,51 +264,56 @@
                     </tr>
                 </thead>
                 <tbody>
-                        @foreach (var booking in Model)
+                    @foreach (var booking in Model)
+                    {
+                        if (booking.Files != null && booking.Files.Any())
                         {
-                            // Проверяем, есть ли у заявки прикрепленные файлы
-                            if (booking.Files != null && booking.Files.Any())
-                            {
-                                <tr>
-                                    @* <td>@booking.ID</td> *@
-                                    <td>@booking.BookingDate</td>
-                                    <td>@booking.Email</td>
-                                    <td>@booking.FullName</td>
-                                    <td>
-                                        @foreach (var file in booking.Files)
-                                        {
-                                            <a href="@Url.Action("DownloadFile", new { id = file.Id })">@file.FileName</a>
-                                            <br />
+                            <tr>
+                                <td>@booking.BookingDate.ToString("dd.MM.yyyy")</td>
+                                <td>@booking.Email</td>
+                                <td>@booking.FullName</td>
+                                <td>
+                                    @foreach (var file in booking.Files)
+                                    {
+                                        <a href="@Url.Action("DownloadFile", new { id = file.Id })">@file.FileName</a>
+
                                         <br />
-                                        }
-                                    </td>
-                                </tr>
-                            }
+                                    }
+                                </td>
+                            </tr>
                         }
+                    }
                 </tbody>
             </table>
-
         }
-        else {
+        else
+        {
+            <p class="booking">Нет окончательных заявок</p>
+        }
+
+        <!-- Сообщение, если заявок вообще нет -->
+        @if ((Model == null || !Model.Any()) &&
+        (ViewBag.Excursions == null || !(ViewBag.Excursions as List<DP.Models.ExcursionBooking>).Any()))
+        {
             <p class="booking">Заявки не найдены</p>
-        }       
+        }
 
         @if (!ViewData.ModelState.IsValid)
         {
-        <div class="alert">
-            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-            {
-            <p>@error.ErrorMessage</p>
-            }
-        </div>
+            <div class="alert">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <p>@error.ErrorMessage</p>
+                }
+            </div>
         }
-    </div>
 
-    <div class="button-container">
-        <a class="center-button" href="/Booking/Create?eventType=MasterClass">Добавить заявку на проф пробы</a>
-        <a class="center-button" href="/Booking/ExcursionCreate">Добавить заявку на экскурсию</a>
-        <a class="center-button" href="/Booking/CreateFinalBooking">Добавить окончательную заявку</a>
-        <a href="/" class="btn btn-secondary">Вернуться на главную</a>
+        <div class="button-container">
+            <a class="center-button" href="/Booking/Create?eventType=MasterClass">Добавить заявку на проф пробы</a>
+            <a class="center-button" href="/Booking/ExcursionCreate">Добавить заявку на экскурсию</a>
+            <a class="center-button" href="/Booking/CreateFinalBooking">Добавить окончательную заявку</a>
+            <a href="/" class="btn btn-secondary">Вернуться на главную</a>
+        </div>
     </div>
 </body>
 </html>

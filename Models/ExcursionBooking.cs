@@ -8,22 +8,25 @@ namespace DP.Models
         [Key]
         public int Id { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "ФИО обязательно")]
         public string FullName { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Email обязателен")]
+        [EmailAddress(ErrorMessage = "Некорректный Email")]
         public string Email { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Телефон обязателен")]
+        [Phone(ErrorMessage = "Некорректный телефон")]
         public string PhoneNumber { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Школа обязательна")]
         public string SchoolName { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Дата обязательна")]
+        [DataType(DataType.Date)]
         public DateTime BookingDate { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Время обязательно")]
         public string TimeRange { get; set; }
 
         public string Status { get; set; }

@@ -21,7 +21,6 @@ namespace DP.Models
 
         [ForeignKey("Event")]
         public int EventId { get; set; }
-
         public Event Event { get; set; }
         [Required]
         public string FullName { get; set; }
