@@ -3,6 +3,9 @@
 <head>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7-beta.19/jquery.inputmask.min.js"></script>
+    <link rel="stylesheet"
+          href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css" />
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Создать новую заявку</title>
@@ -196,7 +199,7 @@
             </div>
             <div class="form-group">
                 <label for="bookingDate">Дата бронирования:</label>
-                <input id="bookingDate" name="bookingDate" type="date" class="form-control" required disabled />
+                <input id="bookingDate" name="bookingDate" type="text" class="form-control" required disabled />
             </div>
             <div class="form-group">
                 <label for="timeRange">Время:</label>
@@ -210,127 +213,112 @@
             <a href="/Booking" class="btn btn-secondary" style="margin-left: 10px;">Вернуться назад</a>
         </form>
         <script type="text/javascript">
-            $(document).ready(function () {
-                // Маска для телефона
-                $("#phone").inputmask("8(999)-999-99-99");
+                        $(function () {
+              // Маска для телефона (оставляем, как есть)
+              $("#phone").inputmask("8(999)-999-99-99");
 
-                // Оповещения убираем перед каждым действием
-                function clearAlerts() {
-                    $('.field-validation-error').remove();
-                    $('#no-slots-alert').remove();
-                    $('#no-times-alert').remove();
+              // Очистка сообщений об ошибках
+              function clearAlerts() {
+                $('.field-validation-error, .alert').remove();
+              }
+
+              // При изменении профпробы — НЕ трогаем (оставлено как есть)
+              $("#ProfProbaId").on("change", function () {
+                clearAlerts();
+                $("#EventId")
+                  .empty()
+                  .append('<option value="">Загрузка...</option>')
+                  .prop("disabled", true);
+
+                var profProbaId = $(this).val();
+                if (profProbaId) {
+                  $.getJSON("/Booking/GetEventsByProfProba", { profProbaId: profProbaId })
+                    .done(function (data) {
+                      var $ev = $("#EventId").empty();
+                      $ev.append('<option value="">Выберите событие</option>');
+                      $.each(data, function (_, item) {
+                        $ev.append($('<option>').val(item.id).text(item.name));
+                      });
+                      $ev.prop("disabled", false);
+                    })
+                    .fail(function () {
+                      $("#EventId")
+                        .empty()
+                        .append('<option value="">Ошибка загрузки</option>');
+                    });
+                } else {
+                  $("#EventId")
+                    .empty()
+                    .append('<option value="">Сначала выберите профпробу</option>');
                 }
 
-                // Обработчик изменения профпробы — подгружаем события
-                $("#ProfProbaId").on("change", function () {
-                    var profProbaId = $(this).val();
-                    var $eventDropdown = $("#EventId");
-                    $eventDropdown.empty().prop("disabled", true);
-                    $eventDropdown.append($('<option></option>').val("").text("Загрузка..."));
-                    clearAlerts();
+                // Сбрасываем дату и время при смене профпробы
+                $("#bookingDate")
+                  .val("")
+                  .prop("disabled", true)
+                  .datepicker("destroy");
+                $("#timeRange")
+                  .empty()
+                  .append('<option value="">-- Сначала выберите дату --</option>')
+                  .prop("disabled", true);
+              });
 
-                    if (profProbaId) {
-                        $.getJSON("/Booking/GetEventsByProfProba", { profProbaId: profProbaId }, function (data) {
-                            $eventDropdown.empty();
-                            $eventDropdown.append($('<option></option>').val("").text("Выберите событие"));
-                            $.each(data, function (index, item) {
-                                $eventDropdown.append($('<option></option>').val(item.id).text(item.name));
-                            });
-                            $eventDropdown.prop("disabled", false);
-                        }).fail(function () {
-                            $eventDropdown.empty().append($('<option></option>').val("").text("Ошибка загрузки"));
-                        });
-                    } else {
-                        $eventDropdown.empty().append($('<option></option>').val("").text("Сначала выберите профпробу"));
+              // При выборе события — инициализируем datepicker с выбором только Вт и Чт
+              $("#EventId").on("change", function () {
+                clearAlerts();
+
+                // Сбрасываем дату
+                $("#bookingDate")
+                  .val("")
+                  .prop("disabled", false)
+                  .datepicker("destroy")
+                  .datepicker({
+                    dateFormat: "yy-mm-dd",
+                    minDate: 0,
+                    beforeShowDay: function (date) {
+                      var day = date.getDay();
+                      // Только вторник (2) и четверг (4)
+                      return [day === 2 || day === 4];
+                    },
+                    onSelect: function (selectedDate) {
+                      clearAlerts();
+                      // После выбора даты — разблокируем и выставляем один временной интервал
+                      $("#timeRange")
+                        .empty()
+                        .append('<option value="">Выберите время</option>')
+                        .append('<option value="12:00-14:00">12:00-14:00</option>')
+                        .prop("disabled", false);
                     }
-                    // Сброс даты и времени
-                    $("#bookingDate").val("").prop("disabled", true).removeAttr("min").removeAttr("max").removeAttr("data-available");
-                    $("#timeRange").empty().prop("disabled", true).append($('<option></option>').val("").text("Сначала выберите дату"));
-                });
+                  });
 
-                // Обработчик изменения события — подгружаем доступные даты
-                $("#EventId").on("change", function () {
-                    var profProbaId = $("#ProfProbaId").val();
-                    var eventId = $(this).val();
-                    var $dateInput = $("#bookingDate");
-                    var $timeDropdown = $("#timeRange");
-                    clearAlerts();
-                    $dateInput.val("").prop("disabled", true).removeAttr("min").removeAttr("max").removeAttr("data-available");
-                    $timeDropdown.empty().prop("disabled", true).append($('<option></option>').val("").text("Сначала выберите дату"));
+                // Сбрасываем время при смене события
+                $("#timeRange")
+                  .empty()
+                  .append('<option value="">-- Сначала выберите дату --</option>')
+                  .prop("disabled", true);
+              });
 
-                    if (profProbaId && eventId) {
-                        $.getJSON("/Booking/GetAvailableDates", { profProbaId: profProbaId, eventId: eventId }, function (dates) {
-                            if (dates.length > 0) {
-                                $dateInput.prop("disabled", false);
-                                $dateInput.attr("min", dates[0]);
-                                $dateInput.attr("max", dates[dates.length-1]);
-                                $dateInput.attr("data-available", dates.join(","));
-                            } else {
-                                $dateInput.prop("disabled", true);
-                                // Показываем оповещение
-                                $dateInput.closest('.form-group').after('<div id="no-slots-alert" class="alert">Нет доступных дат для выбранного события!</div>');
-                            }
-                        }).fail(function () {
-                            $dateInput.prop("disabled", true);
-                        });
-                    }
-                });
+              // Валидация при отправке формы
+              $('form.form-container').on('submit', function (e) {
+                clearAlerts();
+                var valid = true;
+                var $date = $("#bookingDate"),
+                  $time = $("#timeRange");
 
-                // При выборе даты — подгружаем свободное время
-                $("#bookingDate").on("change", function () {
-                    clearAlerts();
-                    var availableDates = ($(this).attr("data-available") || "").split(",");
-                    var selected = $(this).val();
-                    var $timeDropdown = $("#timeRange");
-                    $timeDropdown.empty().prop("disabled", true).append($('<option></option>').val("").text("Сначала выберите дату"));
-
-                    // Если дата не из доступных — сбрасываем выбор
-                    if (availableDates.indexOf(selected) === -1) {
-                        $(this).val("");
-                        return;
-                    }
-
-                    var profProbaId = $("#ProfProbaId").val();
-                    var eventId = $("#EventId").val();
-                    if (profProbaId && eventId && selected) {
-                        $.getJSON("/Booking/GetAvailableTimes", { profProbaId: profProbaId, eventId: eventId, date: selected }, function (times) {
-                            if (times.length > 0) {
-                                $timeDropdown.empty();
-                                $timeDropdown.append($('<option></option>').val("").text("Выберите время"));
-                                $.each(times, function (index, time) {
-                                    $timeDropdown.append($('<option></option>').val(time).text(time));
-                                });
-                                $timeDropdown.prop("disabled", false);
-                            } else {
-                                $timeDropdown.prop("disabled", true);
-                                // Показываем оповещение
-                                $timeDropdown.closest('.form-group').after('<div id="no-times-alert" class="alert">Нет доступного времени на выбранную дату!</div>');
-                            }
-                        }).fail(function () {
-                            $timeDropdown.empty().append($('<option></option>').val("").text("Ошибка загрузки"));
-                        });
-                    }
-                });
-
-                // Валидация при отправке формы
-                $('form.form-container').on('submit', function(e) {
-                    clearAlerts();
-                    let valid = true;
-                    let $date = $('#bookingDate');
-                    let $time = $('#timeRange');
-
-                    if ($date.prop('disabled') || !$date.val()) {
-                        valid = false;
-                        $date.after('<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите дату!</div>');
-                    }
-                    if ($time.prop('disabled') || !$time.val()) {
-                        valid = false;
-                        $time.after('<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите время!</div>');
-                    }
-                    if (!valid) e.preventDefault();
-                });
+                if ($date.prop("disabled") || !$date.val()) {
+                  valid = false;
+                  $date.after('<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите дату!</div>');
+                }
+                if ($time.prop("disabled") || !$time.val()) {
+                  valid = false;
+                  $time.after('<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите время!</div>');
+                }
+                if (!valid) e.preventDefault();
+              });
             });
+
         </script>
+
 
 
         @if (!ViewData.ModelState.IsValid)

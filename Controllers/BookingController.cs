@@ -191,15 +191,30 @@ namespace DP.Controllers
             }
         }
         // Получить доступные даты
+        [HttpGet]
         public IActionResult GetAvailableDates(int profProbaId, int eventId)
         {
-            var dates = _context.AvailableSlots
-                .Where(s => s.ProfProbaId == profProbaId && s.EventID == eventId)
-                .Select(s => s.SlotDate)
+            // 1) Выбираем из БД все слоты по профпробе, событию и времени
+            var rawSlots = _context.AvailableSlots
+                .Where(s =>
+                    s.ProfProbaId == profProbaId &&
+                    s.EventID == eventId &&
+                    s.TimeRange == "12:00-14:00"
+                )
+                .AsEnumerable(); // дальше работаем LINQ-to-Objects
+
+            // 2) Оставляем только вторники и четверги
+            var dates = rawSlots
+                .Where(s =>
+                    s.SlotDate.DayOfWeek == DayOfWeek.Tuesday ||
+                    s.SlotDate.DayOfWeek == DayOfWeek.Thursday
+                )
+                .Select(s => s.SlotDate.ToString("yyyy-MM-dd"))
                 .Distinct()
                 .OrderBy(d => d)
                 .ToList();
-            return Json(dates.Select(d => d.ToString("yyyy-MM-dd")));
+
+            return Json(dates);
         }
 
         public IActionResult GetAvailableTimes(int profProbaId, int eventId, DateTime date)
