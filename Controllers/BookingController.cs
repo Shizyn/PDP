@@ -232,7 +232,27 @@ namespace DP.Controllers
             var freeTimes = times.Except(bookedTimes).ToList();
             return Json(freeTimes);
         }
+        [HttpGet]
+        public IActionResult GetAvailableDates(int eventId)
+        {
+            var rawSlots = _context.ExcursionSlots
+                .Where(s =>
+                    // если у ExcursionSlots есть поле EventId, то фильтруем
+                    // иначе просто выбираем все слоты на будущее
+                    (/*s.EventId == eventId &&*/ s.SlotDate > DateTime.Today &&
+                    s.TimeRange == "12:00-14:00")
+                )
+                .AsEnumerable();
 
+            var dates = rawSlots
+                .Where(s => s.SlotDate.DayOfWeek == DayOfWeek.Tuesday || s.SlotDate.DayOfWeek == DayOfWeek.Thursday)
+                .Select(s => s.SlotDate.ToString("yyyy-MM-dd"))
+                .Distinct()
+                .OrderBy(d => d)
+                .ToList();
+
+            return Json(dates);
+        }
         [HttpGet]
         public IActionResult DownloadExcelTemplate()
         {

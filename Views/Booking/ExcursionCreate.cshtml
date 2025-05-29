@@ -3,6 +3,9 @@
 <head>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7-beta.19/jquery.inputmask.min.js"></script>
+    <link rel="stylesheet"
+          href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css" />
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Создать новую заявку</title>
@@ -172,18 +175,57 @@
 
             <div class="form-group">
                 <label for="bookingDate">Дата экскурсии:</label>
-                <input id="bookingDate" name="bookingDate" type="date" class="form-control" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                <input id="bookingDate" name="bookingDate" type="text" required />
             </div>
 
             <div class="form-group">
-                <label for="timeRange">Количество человек:</label>
-                <input type="text" id="timeRange" name="timeRange" required />
+                <label for="timeRange">Время:</label>
+                <select id="timeRange" name="timeRange" required disabled>
+                    <option value="">-- Сначала выберите дату --</option>
+                </select>
             </div>
 
             <button type="submit" class="btn-submit">Отправить заявку</button>
             <a href="/Booking" class="btn">Назад</a>
         </form>
+        <script type="text/javascript">
+            $(function () {
+                $("#phone").inputmask("8(999)-999-99-99");
 
+                $("#bookingDate").datepicker({
+                    dateFormat: "yy-mm-dd",
+                    minDate: 0,
+                    beforeShowDay: function(date) {
+                        var day = date.getDay();
+                        return [day === 2 || day === 4];
+                    },
+                    onSelect: function(selectedDate) {
+                        $("#timeRange")
+                            .empty()
+                            .append('<option value="">Выберите время</option>')
+                            .append('<option value="12:00-14:00">12:00-14:00</option>')
+                            .prop("disabled", false);
+                    }
+                });
+
+                $('form.form-container').on('submit', function(e) {
+                    $(".field-validation-error").remove();
+                    var valid = true;
+                    var $date = $("#bookingDate"),
+                        $time = $("#timeRange");
+
+                    if (!$date.val()) {
+                        valid = false;
+                        $date.after('<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите дату!</div>');
+                    }
+                    if ($time.prop("disabled") || !$time.val()) {
+                        valid = false;
+                        $time.after('<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите время!</div>');
+                    }
+                    if (!valid) e.preventDefault();
+                });
+            });
+        </script>
         @if (!ViewData.ModelState.IsValid)
         {
             <div class="alert">
