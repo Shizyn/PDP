@@ -152,7 +152,7 @@
             <div class="form-group">
                 <label for="kvantum">Выберите профпробу:</label>
                 <select id="ProfProbaId" name="ProfProbaId" required>
-                    <option value="">-- Выберите профпробу --</option> <!-- Добавлено -->
+                    <option value="">-- Выберите профпробу --</option> 
                     @foreach (var item in ViewBag.ProfProby)
                     {
                         <option value="@item.Id">@item.Name</option>
@@ -199,7 +199,7 @@
             </div>
             <div class="form-group">
                 <label for="bookingDate">Дата бронирования:</label>
-                <input id="bookingDate" name="bookingDate" type="text" class="form-control" required disabled />
+                <input id="bookingDate" name="bookingDate" type="text" class="form-control" placeholder="Выберите дату" required readonly />
             </div>
             <div class="form-group">
                 <label for="timeRange">Время:</label>
@@ -213,111 +213,101 @@
             <a href="/Booking" class="btn btn-secondary" style="margin-left: 10px;">Вернуться назад</a>
         </form>
         <script type="text/javascript">
-                        $(function () {
-              // Маска для телефона (оставляем, как есть)
-              $("#phone").inputmask("8(999)-999-99-99");
+            $(function () {
+                $("#phone").inputmask("8(999)-999-99-99");
 
-              // Очистка сообщений об ошибках
-              function clearAlerts() {
-                $('.field-validation-error, .alert').remove();
-              }
-
-              // При изменении профпробы — НЕ трогаем (оставлено как есть)
-              $("#ProfProbaId").on("change", function () {
-                clearAlerts();
-                $("#EventId")
-                  .empty()
-                  .append('<option value="">Загрузка...</option>')
-                  .prop("disabled", true);
-
-                var profProbaId = $(this).val();
-                if (profProbaId) {
-                  $.getJSON("/Booking/GetEventsByProfProba", { profProbaId: profProbaId })
-                    .done(function (data) {
-                      var $ev = $("#EventId").empty();
-                      $ev.append('<option value="">Выберите событие</option>');
-                      $.each(data, function (_, item) {
-                        $ev.append($('<option>').val(item.id).text(item.name));
-                      });
-                      $ev.prop("disabled", false);
-                    })
-                    .fail(function () {
-                      $("#EventId")
-                        .empty()
-                        .append('<option value="">Ошибка загрузки</option>');
-                    });
-                } else {
-                  $("#EventId")
-                    .empty()
-                    .append('<option value="">Сначала выберите профпробу</option>');
+                function clearAlerts() {
+                    $('.field-validation-error, .alert').remove();
                 }
 
-                // Сбрасываем дату и время при смене профпробы
-                $("#bookingDate")
-                  .val("")
-                  .prop("disabled", true)
-                  .datepicker("destroy");
-                $("#timeRange")
-                  .empty()
-                  .append('<option value="">-- Сначала выберите дату --</option>')
-                  .prop("disabled", true);
-              });
+                let availableDates = [];
 
-              // При выборе события — инициализируем datepicker с выбором только Вт и Чт
-              $("#EventId").on("change", function () {
-                clearAlerts();
+                // Загрузка событий по профпробе
+                $("#ProfProbaId").on("change", function () {
+                    clearAlerts();
+                    $("#EventId").empty().append('<option value="">Загрузка...</option>').prop("disabled", true);
+                    $("#bookingDate").val("").prop("disabled", true).datepicker("destroy");
+                    $("#timeRange").empty().append('<option value="">-- Сначала выберите дату --</option>').prop("disabled", true);
 
-                // Сбрасываем дату
-                $("#bookingDate")
-                  .val("")
-                  .prop("disabled", false)
-                  .datepicker("destroy")
-                  .datepicker({
-                    dateFormat: "yy-mm-dd",
-                    minDate: 0,
-                    beforeShowDay: function (date) {
-                      var day = date.getDay();
-                      // Только вторник (2) и четверг (4)
-                      return [day === 2 || day === 4];
-                    },
-                    onSelect: function (selectedDate) {
-                      clearAlerts();
-                      // После выбора даты — разблокируем и выставляем один временной интервал
-                      $("#timeRange")
-                        .empty()
-                        .append('<option value="">Выберите время</option>')
-                        .append('<option value="12:00-14:00">12:00-14:00</option>')
-                        .prop("disabled", false);
+                    const profProbaId = $(this).val();
+                    if (!profProbaId) return;
+
+                    $.getJSON("/Booking/GetEventsByProfProba", { profProbaId: profProbaId })
+                        .done(function (data) {
+                            const $ev = $("#EventId").empty();
+                            $ev.append('<option value="">Выберите событие</option>');
+                            $.each(data, function (_, item) {
+                                $ev.append($('<option>').val(item.id).text(item.name));
+                            });
+                            $ev.prop("disabled", false);
+                        })
+                        .fail(function () {
+                            $("#EventId").empty().append('<option value="">Ошибка загрузки</option>');
+                        });
+                });
+
+                // Загрузка доступных дат с учетом занятых
+                $("#EventId").on("change", function () {
+                    clearAlerts();
+                    $("#bookingDate").val("").prop("disabled", true).datepicker("destroy");
+                    $("#timeRange").empty().append('<option value="">-- Сначала выберите дату --</option>').prop("disabled", true);
+
+                    const eventId = $(this).val();
+                    const profProbaId = $("#ProfProbaId").val();
+
+                    if (!eventId || !profProbaId) return;
+
+                    $.getJSON("/Booking/GetAvailableDates", { profProbaId: profProbaId, eventId: eventId })
+                        .done(function (data) {
+                            availableDates = data;
+
+                            $("#bookingDate").prop("disabled", false).datepicker({
+                                dateFormat: "yy-mm-dd",
+                                minDate: 0,
+                                maxDate: "+1m",
+                                beforeShowDay: function (date) {
+                                    const day = date.getDay();
+                                    const formatted = $.datepicker.formatDate("yy-mm-dd", date);
+                                    return [(day === 2 || day === 4) && availableDates.includes(formatted)];
+                                },
+                                onSelect: function () {
+                                    clearAlerts();
+                                    $("#timeRange")
+                                        .empty()
+                                        .append('<option value="">Выберите время</option>')
+                                        .append('<option value="12:00-14:00">12:00-14:00</option>')
+                                        .prop("disabled", false);
+                                }
+                            }).attr("readonly", true);
+                        })
+                        .fail(function () {
+                            $("#bookingDate").val("Ошибка загрузки дат").prop("disabled", true);
+                        });
+                });
+
+                // Валидация формы
+                $('form.form-container').on('submit', function (e) {
+                    clearAlerts();
+                    let valid = true;
+                    const $date = $("#bookingDate");
+                    const $time = $("#timeRange");
+
+                    if ($date.prop("disabled") || !$date.val()) {
+                        valid = false;
+                        $date.after('<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите дату!</div>');
                     }
-                  });
+                    if ($time.prop("disabled") || !$time.val()) {
+                        valid = false;
+                        $time.after('<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите время!</div>');
+                    }
 
-                // Сбрасываем время при смене события
-                $("#timeRange")
-                  .empty()
-                  .append('<option value="">-- Сначала выберите дату --</option>')
-                  .prop("disabled", true);
-              });
-
-              // Валидация при отправке формы
-              $('form.form-container').on('submit', function (e) {
-                clearAlerts();
-                var valid = true;
-                var $date = $("#bookingDate"),
-                  $time = $("#timeRange");
-
-                if ($date.prop("disabled") || !$date.val()) {
-                  valid = false;
-                  $date.after('<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите дату!</div>');
-                }
-                if ($time.prop("disabled") || !$time.val()) {
-                  valid = false;
-                  $time.after('<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите время!</div>');
-                }
-                if (!valid) e.preventDefault();
-              });
+                    if (!valid) e.preventDefault();
+                });
             });
-
         </script>
+
+
+
 
 
 

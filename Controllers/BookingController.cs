@@ -83,7 +83,15 @@ namespace DP.Controllers
             {
                 return RedirectToAction("Login", "Home");
             }
+            var isSlotTaken = _context.ExcursionBookings.Any(e =>
+        e.BookingDate.Date == bookingDate.Date &&
+        e.TimeRange == timeRange);
 
+            if (isSlotTaken)
+            {
+                ModelState.AddModelError("", "На выбранную дату и время уже оформлена заявка. Пожалуйста, выберите другое время.");
+                return View("ExcursionCreate");
+            }
             var excursion = new ExcursionBooking
             {
                 FullName = fullName,
@@ -194,65 +202,61 @@ namespace DP.Controllers
         [HttpGet]
         public IActionResult GetAvailableDates(int profProbaId, int eventId)
         {
-            // 1) Выбираем из БД все слоты по профпробе, событию и времени
-            var rawSlots = _context.AvailableSlots
-                .Where(s =>
-                    s.ProfProbaId == profProbaId &&
-                    s.EventID == eventId &&
-                    s.TimeRange == "12:00-14:00"
-                )
-                .AsEnumerable(); // дальше работаем LINQ-to-Objects
+            var today = DateTime.Today;
+            var endDate = today.AddMonths(1);
 
-            // 2) Оставляем только вторники и четверги
-            var dates = rawSlots
-                .Where(s =>
-                    s.SlotDate.DayOfWeek == DayOfWeek.Tuesday ||
-                    s.SlotDate.DayOfWeek == DayOfWeek.Thursday
-                )
-                .Select(s => s.SlotDate.ToString("yyyy-MM-dd"))
-                .Distinct()
-                .OrderBy(d => d)
+            // Получаем все даты вторника и четверга в пределах месяца
+            var allPossibleDates = Enumerable.Range(0, (endDate - today).Days + 1)
+                .Select(offset => today.AddDays(offset))
+                .Where(d => (d.DayOfWeek == DayOfWeek.Tuesday || d.DayOfWeek == DayOfWeek.Thursday))
                 .ToList();
 
-            return Json(dates);
-        }
-
-        public IActionResult GetAvailableTimes(int profProbaId, int eventId, DateTime date)
-        {
-            var bookedTimes = _context.Bookings
-                .Where(b => b.ProfProbaId == profProbaId && b.EventId == eventId && b.BookingDate == date)
-                .Select(b => b.TimeRange)
+            // Получаем даты, на которые уже есть заявки по профпробе и событию
+            var bookedDates = _context.Bookings
+                .Where(b =>
+                    b.ProfProbaId == profProbaId &&
+                    b.EventId == eventId &&
+                    b.TimeRange == "12:00-14:00")
+                .Select(b => b.BookingDate.Date)
                 .ToList();
 
-            var times = _context.AvailableSlots
-                .Where(s => s.ProfProbaId == profProbaId && s.EventID == eventId && s.SlotDate == date)
-                .Select(s => s.TimeRange)
+            // Исключаем занятые даты
+            var freeDates = allPossibleDates
+                .Except(bookedDates)
+                .Select(d => d.ToString("yyyy-MM-dd"))
                 .ToList();
 
-            var freeTimes = times.Except(bookedTimes).ToList();
-            return Json(freeTimes);
+            return Json(freeDates);
         }
         [HttpGet]
-        public IActionResult GetAvailableDates(int eventId)
+        public IActionResult GetAvailableExcursionDates()
         {
-            var rawSlots = _context.ExcursionSlots
-                .Where(s =>
-                    // если у ExcursionSlots есть поле EventId, то фильтруем
-                    // иначе просто выбираем все слоты на будущее
-                    (/*s.EventId == eventId &&*/ s.SlotDate > DateTime.Today &&
-                    s.TimeRange == "12:00-14:00")
-                )
-                .AsEnumerable();
+            var today = DateTime.Today;
+            var monthAhead = today.AddMonths(1);
 
-            var dates = rawSlots
-                .Where(s => s.SlotDate.DayOfWeek == DayOfWeek.Tuesday || s.SlotDate.DayOfWeek == DayOfWeek.Thursday)
-                .Select(s => s.SlotDate.ToString("yyyy-MM-dd"))
-                .Distinct()
-                .OrderBy(d => d)
+            // Берем все вторники и четверги на месяц вперёд
+            var allPossibleDates = Enumerable.Range(0, (monthAhead - today).Days + 1)
+                .Select(offset => today.AddDays(offset))
+                .Where(date => date.DayOfWeek == DayOfWeek.Tuesday || date.DayOfWeek == DayOfWeek.Thursday)
                 .ToList();
 
-            return Json(dates);
+            // Даты, на которые уже есть заявки
+            var takenDates = _context.ExcursionBookings
+                .Where(e => e.BookingDate >= today && e.BookingDate <= monthAhead && e.TimeRange == "12:00-14:00")
+                .Select(e => e.BookingDate.Date)
+                .Distinct()
+                .ToList();
+
+            // Убираем занятые
+            var available = allPossibleDates
+                .Except(takenDates)
+                .Select(d => d.ToString("yyyy-MM-dd"))
+                .ToList();
+
+            return Json(available);
         }
+
+
         [HttpGet]
         public IActionResult DownloadExcelTemplate()
         {
