@@ -64,9 +64,23 @@ namespace DP.Controllers
         {
             var events = _context.Events
                 .Where(e => e.ProfProbaId == profProbaId)
+                .Select(e => new { e.ID, e.Name })
                 .ToList();
 
             return Json(events);
+        }
+        [HttpGet]
+        public IActionResult GetEventDetails(int eventId)
+        {
+            var ev = _context.Events.FirstOrDefault(e => e.ID == eventId);
+            if (ev == null)
+                return NotFound();
+
+            return Json(new
+            {
+                name = ev.Name,
+                description = ev.Description, // если такое поле есть
+            });
         }
         [HttpGet]
         public IActionResult ExcursionCreate()

@@ -122,6 +122,45 @@
                 margin: 5px 0;
             }
 
+        .events-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .event-card {
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            padding: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s;
+            background-color: #f9f9f9;
+            word-break: break-word;
+        }
+
+            .event-card:hover {
+                background-color: #e9f2fb;
+                border-color: #0056b3;
+            }
+
+            .event-card.selected {
+                background-color: #dceeff;
+                border-color: #0056b3;
+                font-weight: bold;
+            }
+
+        .event-details {
+            display: none;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            padding: 12px;
+            background-color: #f0f8ff;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #333;
+            white-space: normal;
+            word-wrap: break-word;
+        }
         @@media (max-width: 768px) {
             .booking-container {
                 padding: 25px;
@@ -161,11 +200,10 @@
 
             </div>
             <div class="form-group">
-                <label for="event">Выберите событие:</label>
-                <select id="EventId" name="eventId" required disabled>
-                    <option value="">-- Сначала выберите квантум --</option>
-                </select>
+                <label>События профпробы:</label>
+                <div id="eventsList" class="events-list"></div>
             </div>
+            <div id="eventDetails" class="event-details"></div>
             <div class="form-group">
                 <label for="fullName">ФИО:</label>
                 <input type="text" id="fullName" name="fullName" required />
@@ -199,7 +237,7 @@
             </div>
             <div class="form-group">
                 <label for="bookingDate">Дата бронирования:</label>
-                <input id="bookingDate" name="bookingDate" type="text" class="form-control" placeholder="Выберите дату" required readonly />
+                <input id="bookingDate" name="bookingDate" type="text" class="form-control" placeholder="Выберите дату"/>
             </div>
             <div class="form-group">
                 <label for="timeRange">Время:</label>
@@ -223,28 +261,59 @@
                 let availableDates = [];
 
                 // Загрузка событий по профпробе
+                            // Загрузка событий по профпробе
                 $("#ProfProbaId").on("change", function () {
                     clearAlerts();
-                    $("#EventId").empty().append('<option value="">Загрузка...</option>').prop("disabled", true);
                     $("#bookingDate").val("").prop("disabled", true).datepicker("destroy");
                     $("#timeRange").empty().append('<option value="">-- Сначала выберите дату --</option>').prop("disabled", true);
+                    $("#eventsList").empty();
+                    $("#EventId").val("");
+                    $("#eventDetails").hide().empty(); // Скрываем и очищаем детали
 
                     const profProbaId = $(this).val();
                     if (!profProbaId) return;
 
                     $.getJSON("/Booking/GetEventsByProfProba", { profProbaId: profProbaId })
                         .done(function (data) {
-                            const $ev = $("#EventId").empty();
-                            $ev.append('<option value="">Выберите событие</option>');
-                            $.each(data, function (_, item) {
-                                $ev.append($('<option>').val(item.id).text(item.name));
+                            if (data.length === 0) {
+                                $("#eventsList").append("<div>События не найдены</div>");
+                                return;
+                            }
+
+                            data.forEach(function (item) {
+                                const card = $("<div>")
+                                    .addClass("event-card")
+                                    .text(item.name)
+                                    .attr("data-id", item.id)
+                                    .css("cursor", "pointer");
+
+                                card.on("click", function () {
+                                    $("#EventId").val(item.id);
+
+                                    // Удаляем жирный стиль со всех карточек
+                                    $(".event-card").css("font-weight", "normal");
+
+                                    // Добавляем жирный только выбранной
+                                    $(this).css("font-weight", "bold");
+
+                                    // Загружаем и показываем детали
+                                    $.getJSON("/Booking/GetEventDetails", { eventId: item.id })
+                                        .done(function (details) {
+                                            $("#eventDetails").html(`
+                                                <h4 style="margin-top: 0;">${details.name}</h4>
+                                                ${details.description ? `<p>${details.description}</p>` : ""}
+                                            `).show();
+                                        });
+                                });
+
+                                $("#eventsList").append(card);
                             });
-                            $ev.prop("disabled", false);
                         })
                         .fail(function () {
-                            $("#EventId").empty().append('<option value="">Ошибка загрузки</option>');
+                            $("#eventsList").append("<div>Ошибка загрузки</div>");
                         });
                 });
+
 
                 // Загрузка доступных дат с учетом занятых
                 $("#EventId").on("change", function () {

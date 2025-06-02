@@ -22,6 +22,7 @@ namespace DP.Models
         [ForeignKey("Event")]
         public int EventId { get; set; }
         public Event Event { get; set; }
+        
         [Required(ErrorMessage = "ФИО обязательно для заполнения")]
         [RegularExpression(@"^[a-zA-Zа-яА-Я\s]+$", ErrorMessage = "ФИО может содержать только буквы и пробелы")]
         public string FullName { get; set; }

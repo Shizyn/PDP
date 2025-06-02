@@ -10,6 +10,7 @@ namespace DP.Models
         public int ID { get; set; }
         [Required]
         public string Name { get; set; }
+        public string Description { get; set; }
 
         [ForeignKey("ProfProba")]
         public int ProfProbaId { get; set; }
