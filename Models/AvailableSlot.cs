@@ -4,7 +4,6 @@
     {
         public int Id { get; set; }
         public int ProfProbaId { get; set; }
-        public int EventID { get; set; }
         public DateTime SlotDate { get; set; }
         public string TimeRange { get; set; }
     }

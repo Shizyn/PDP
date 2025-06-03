@@ -203,7 +203,9 @@
                 <label>События профпробы:</label>
                 <div id="eventsList" class="events-list"></div>
             </div>
+            <input type="hidden" id="EventId" name="eventId" />
             <div id="eventDetails" class="event-details"></div>
+
             <div class="form-group">
                 <label for="fullName">ФИО:</label>
                 <input type="text" id="fullName" name="fullName" required />
@@ -237,7 +239,8 @@
             </div>
             <div class="form-group">
                 <label for="bookingDate">Дата бронирования:</label>
-                <input id="bookingDate" name="bookingDate" type="text" class="form-control" placeholder="Выберите дату"/>
+                <input id="bookingDate" name="bookingDate" type="text" class="form-control" placeholder="Выберите дату" readonly />
+
             </div>
             <div class="form-group">
                 <label for="timeRange">Время:</label>
@@ -251,132 +254,166 @@
             <a href="/Booking" class="btn btn-secondary" style="margin-left: 10px;">Вернуться назад</a>
         </form>
         <script type="text/javascript">
-            $(function () {
+            $(document).ready(function () {
+                // Привязка маски к полю телефона
                 $("#phone").inputmask("8(999)-999-99-99");
 
+                // Функция для очистки ошибок/сообщений об ошибках
                 function clearAlerts() {
                     $('.field-validation-error, .alert').remove();
                 }
 
+                // Хранит доступные даты вида "yyyy-mm-dd" для выбранной профпробы
                 let availableDates = [];
 
-                // Загрузка событий по профпробе
-                            // Загрузка событий по профпробе
+                // При изменении выбора профпробы
                 $("#ProfProbaId").on("change", function () {
                     clearAlerts();
-                    $("#bookingDate").val("").prop("disabled", true).datepicker("destroy");
-                    $("#timeRange").empty().append('<option value="">-- Сначала выберите дату --</option>').prop("disabled", true);
+
+                    // Сбрасываем список событий и детали
                     $("#eventsList").empty();
-                    $("#EventId").val("");
-                    $("#eventDetails").hide().empty(); // Скрываем и очищаем детали
+                    $("#eventDetails").hide().empty();
+
+                    // Сбрасываем поля даты/времени
+                    $("#bookingDate")
+                        .val("")
+                        .prop("disabled", true)
+                        .datepicker("destroy");
+                    $("#timeRange")
+                        .empty()
+                        .append('<option value="">-- Сначала выберите дату --</option>')
+                        .prop("disabled", true);
 
                     const profProbaId = $(this).val();
-                    if (!profProbaId) return;
+                    if (!profProbaId) {
+                        return;
+                    }
 
+                    // 1) Загружаем события для выбранной профпробы (без связи с датами/временем)
                     $.getJSON("/Booking/GetEventsByProfProba", { profProbaId: profProbaId })
-                        .done(function (data) {
-                            if (data.length === 0) {
+                        .done(function (events) {
+                            if (events.length === 0) {
                                 $("#eventsList").append("<div>События не найдены</div>");
-                                return;
-                            }
+                            } else {
+                                events.forEach(function (item) {
+                                    const card = $("<div>")
+                                        .addClass("event-card")
+                                        .text(item.name)
+                                        .attr("data-id", item.id)
+                                        .css("cursor", "pointer");
 
-                            data.forEach(function (item) {
-                                const card = $("<div>")
-                                    .addClass("event-card")
-                                    .text(item.name)
-                                    .attr("data-id", item.id)
-                                    .css("cursor", "pointer");
+                                    // Клик по карточке события показывает детали, но не влияет на даты/время
+                                    card.on("click", function () {
+                                        $(".event-card").removeClass("selected").css("font-weight", "normal");
+                                        $(this).addClass("selected").css("font-weight", "bold");
 
-                                card.on("click", function () {
-                                    $("#EventId").val(item.id);
+                                        $.getJSON("/Booking/GetEventDetails", { eventId: item.id })
+                                            .done(function (details) {
+                                                $("#eventDetails").html(`
+                                                    <h4 style="margin-top: 0;">${details.name}</h4>
+                                                    ${details.description ? `<p>${details.description}</p>` : ""}
+                                                `).show();
+                                            })
+                                            .fail(function () {
+                                                $("#eventDetails")
+                                                    .html("<p>Ошибка загрузки деталей события</p>")
+                                                    .show();
+                                            });
+                                    });
 
-                                    // Удаляем жирный стиль со всех карточек
-                                    $(".event-card").css("font-weight", "normal");
-
-                                    // Добавляем жирный только выбранной
-                                    $(this).css("font-weight", "bold");
-
-                                    // Загружаем и показываем детали
-                                    $.getJSON("/Booking/GetEventDetails", { eventId: item.id })
-                                        .done(function (details) {
-                                            $("#eventDetails").html(`
-                                                <h4 style="margin-top: 0;">${details.name}</h4>
-                                                ${details.description ? `<p>${details.description}</p>` : ""}
-                                            `).show();
-                                        });
+                                    $("#eventsList").append(card);
                                 });
-
-                                $("#eventsList").append(card);
-                            });
+                            }
                         })
                         .fail(function () {
-                            $("#eventsList").append("<div>Ошибка загрузки</div>");
+                            $("#eventsList").append("<div>Ошибка загрузки событий</div>");
+                        });
+
+                    // 2) Загружаем доступные даты для выбранной профпробы (игнорируем событие)
+                    $.getJSON("/Booking/GetAvailableDates", { profProbaId: profProbaId })
+                        .done(function (dateList) {
+                            // dateList — массив строк "yyyy-MM-dd"
+                            availableDates = dateList;
+
+                            // Инициализируем datepicker
+                            $("#bookingDate")
+                                .prop("disabled", false)
+                                .datepicker({
+                                    dateFormat: "yy-mm-dd",
+                                    minDate: 0,
+                                    maxDate: "+1m",
+                                    beforeShowDay: function (date) {
+                                        const formatted = $.datepicker.formatDate("yy-mm-dd", date);
+                                        return [availableDates.includes(formatted)];
+                                    },
+                                    onSelect: function (dateText) {
+                                        clearAlerts();
+
+                                        // Сброс и пока «Загрузка...» для селекта времени
+                                        $("#timeRange")
+                                            .empty()
+                                            .append('<option value="">Загрузка...</option>')
+                                            .prop("disabled", true);
+
+                                        // Запрашиваем свободные интервалы для выбранной даты (без eventId)
+                                        $.getJSON("/Booking/GetAvailableTimes", {
+                                            profProbaId: profProbaId,
+                                            date:        dateText
+                                        }).done(function (timeRanges) {
+                                            if (timeRanges.length === 0) {
+                                                $("#timeRange")
+                                                    .empty()
+                                                    .append('<option value="">Нет доступных времён</option>');
+                                                return;
+                                            }
+
+                                            $("#timeRange").empty().append('<option value="">Выберите время</option>');
+                                            timeRanges.forEach(function (range) {
+                                                $("#timeRange").append(`<option value="${range}">${range}</option>`);
+                                            });
+                                            $("#timeRange").prop("disabled", false);
+                                        }).fail(function () {
+                                            $("#timeRange")
+                                                .empty()
+                                                .append('<option value="">Ошибка загрузки времён</option>');
+                                        });
+                                    }
+                                })
+                                .attr("readonly", true);
+                        })
+                        .fail(function () {
+                            $("#bookingDate")
+                                .val("Ошибка загрузки дат")
+                                .prop("disabled", true);
                         });
                 });
 
-
-                // Загрузка доступных дат с учетом занятых
-                $("#EventId").on("change", function () {
-                    clearAlerts();
-                    $("#bookingDate").val("").prop("disabled", true).datepicker("destroy");
-                    $("#timeRange").empty().append('<option value="">-- Сначала выберите дату --</option>').prop("disabled", true);
-
-                    const eventId = $(this).val();
-                    const profProbaId = $("#ProfProbaId").val();
-
-                    if (!eventId || !profProbaId) return;
-
-                    $.getJSON("/Booking/GetAvailableDates", { profProbaId: profProbaId, eventId: eventId })
-                        .done(function (data) {
-                            availableDates = data;
-
-                            $("#bookingDate").prop("disabled", false).datepicker({
-                                dateFormat: "yy-mm-dd",
-                                minDate: 0,
-                                maxDate: "+1m",
-                                beforeShowDay: function (date) {
-                                    const day = date.getDay();
-                                    const formatted = $.datepicker.formatDate("yy-mm-dd", date);
-                                    return [(day === 2 || day === 4) && availableDates.includes(formatted)];
-                                },
-                                onSelect: function () {
-                                    clearAlerts();
-                                    $("#timeRange")
-                                        .empty()
-                                        .append('<option value="">Выберите время</option>')
-                                        .append('<option value="12:00-14:00">12:00-14:00</option>')
-                                        .prop("disabled", false);
-                                }
-                            }).attr("readonly", true);
-                        })
-                        .fail(function () {
-                            $("#bookingDate").val("Ошибка загрузки дат").prop("disabled", true);
-                        });
-                });
-
-                // Валидация формы
+                // Валидация формы перед отправкой
                 $('form.form-container').on('submit', function (e) {
                     clearAlerts();
                     let valid = true;
-                    const $date = $("#bookingDate");
-                    const $time = $("#timeRange");
+                    const $dateField = $("#bookingDate");
+                    const $timeField = $("#timeRange");
 
-                    if ($date.prop("disabled") || !$date.val()) {
+                    if ($dateField.prop("disabled") || !$dateField.val()) {
                         valid = false;
-                        $date.after('<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите дату!</div>');
+                        $dateField.after(
+                            '<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите дату!</div>'
+                        );
                     }
-                    if ($time.prop("disabled") || !$time.val()) {
+                    if ($timeField.prop("disabled") || !$timeField.val()) {
                         valid = false;
-                        $time.after('<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите время!</div>');
+                        $timeField.after(
+                            '<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите время!</div>'
+                        );
                     }
 
-                    if (!valid) e.preventDefault();
+                    if (!valid) {
+                        e.preventDefault();
+                    }
                 });
             });
         </script>
-
-
-
 
 
 

@@ -10,7 +10,6 @@ namespace DP.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ID { get; set; }
 
-
         [ForeignKey("User")]
         public int UserId { get; set; }
         public User User { get; set; }
@@ -18,10 +17,6 @@ namespace DP.Models
         [Column("TrialID")]
         public int ProfProbaId { get; set; }
         public ProfProba ProfProba { get; set; }
-
-        [ForeignKey("Event")]
-        public int EventId { get; set; }
-        public Event Event { get; set; }
         
         [Required(ErrorMessage = "ФИО обязательно для заполнения")]
         [RegularExpression(@"^[a-zA-Zа-яА-Я\s]+$", ErrorMessage = "ФИО может содержать только буквы и пробелы")]

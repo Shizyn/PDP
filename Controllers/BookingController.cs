@@ -82,6 +82,86 @@ namespace DP.Controllers
                 description = ev.Description, // если такое поле есть
             });
         }
+        public JsonResult GetAvailableTimes(int eventId, DateTime date)
+        {
+            var times = _context.AvailableSlots
+                .Where(s => s.ProfProbaId == eventId && s.SlotDate == date)
+                .Select(s => s.TimeRange)
+                .ToList();
+
+            return Json(times);
+        }
+        [HttpGet]
+        public IActionResult GetAvailableDates(int profProbaId, int eventId)
+        {
+            // 1) Берём все слоты из AvailableSlots для заданной ProfProbaId
+            var allSlots = _context.AvailableSlots
+                .Where(s => s.ProfProbaId == profProbaId)
+                .ToList();
+
+            // 2) Берём все заявки из Bookings, которые совпадают по ProfProbaId, EventID, дате и времени
+            var bookedSlots = _context.Bookings
+                .Where(b =>
+                    b.ProfProbaId == profProbaId &&
+                    b.EventId == eventId)
+                .Select(b => new { Date = b.BookingDate, Time = b.TimeRange })
+                .ToList();
+
+            // 3) Группируем все слоты по дате и проверяем, 
+            //    остался ли хотя бы один незанятый TimeRange в AvailableSlots для каждой даты.
+            var freeDates = allSlots
+                .GroupBy(s => s.SlotDate.Date)
+                .Where(g =>
+                {
+                    // g.Key = конкретная дата, g — все слоты этой даты из AvailableSlots
+                    // Если найдётся хотя бы один слот (TimeRange) из g, 
+                    // который не содержится в bookedSlots, значит дата свободна.
+                    return g.Any(slot =>
+                        !bookedSlots.Any(bs =>
+                            bs.Date == slot.SlotDate.Date &&
+                            bs.Time == slot.TimeRange));
+                })
+                .Select(g => g.Key.ToString("yyyy-MM-dd"))
+                .ToList();
+
+            return Json(freeDates);
+        }
+        [HttpGet]
+        public IActionResult GetAvailableTimes(int profProbaId, int eventId, string date)
+        {
+            // Парсим дату из строки
+            if (!DateTime.TryParseExact(date, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var targetDate))
+            {
+                return BadRequest("Неверный формат даты");
+            }
+
+            // 1) Берём все слоты из AvailableSlots на эту ProfProbaId и дату
+            var dailySlots = _context.AvailableSlots
+                .Where(s =>
+                    s.ProfProbaId == profProbaId &&
+                    s.SlotDate.Date == targetDate.Date)
+                .ToList();
+
+            // 2) Берём все заявки из Bookings, которые совпадают по ProfProbaId, EventID, дате и времени
+            var bookedSlots = _context.Bookings
+                .Where(b =>
+                    b.ProfProbaId == profProbaId &&
+                    b.EventId == eventId &&
+                    b.BookingDate.Date == targetDate.Date)
+                .Select(b => b.TimeRange)
+                .ToList();
+
+            // 3) Оставляем только те TimeRange, которых нет в bookedSlots
+            var freeTimes = dailySlots
+                .Where(s => !bookedSlots.Contains(s.TimeRange))
+                .OrderBy(s => s.TimeRange) // можно сортировать по нужной вам логике
+                .Select(s => s.TimeRange)
+                .Distinct()
+                .ToList();
+
+            return Json(freeTimes);
+        }
+
         [HttpGet]
         public IActionResult ExcursionCreate()
         {
@@ -212,36 +292,7 @@ namespace DP.Controllers
                 return View();
             }
         }
-        // Получить доступные даты
-        [HttpGet]
-        public IActionResult GetAvailableDates(int profProbaId, int eventId)
-        {
-            var today = DateTime.Today;
-            var endDate = today.AddMonths(1);
-
-            // Получаем все даты вторника и четверга в пределах месяца
-            var allPossibleDates = Enumerable.Range(0, (endDate - today).Days + 1)
-                .Select(offset => today.AddDays(offset))
-                .Where(d => (d.DayOfWeek == DayOfWeek.Tuesday || d.DayOfWeek == DayOfWeek.Thursday))
-                .ToList();
-
-            // Получаем даты, на которые уже есть заявки по профпробе и событию
-            var bookedDates = _context.Bookings
-                .Where(b =>
-                    b.ProfProbaId == profProbaId &&
-                    b.EventId == eventId &&
-                    b.TimeRange == "12:00-14:00")
-                .Select(b => b.BookingDate.Date)
-                .ToList();
-
-            // Исключаем занятые даты
-            var freeDates = allPossibleDates
-                .Except(bookedDates)
-                .Select(d => d.ToString("yyyy-MM-dd"))
-                .ToList();
-
-            return Json(freeDates);
-        }
+        
         [HttpGet]
         public IActionResult GetAvailableExcursionDates()
         {
