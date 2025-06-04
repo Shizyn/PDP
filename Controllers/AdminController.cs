@@ -29,14 +29,12 @@ namespace DP.Controllers
         {
             var bookings = _context.Bookings
                 .Include(b => b.ProfProba)
-                .Include(b => b.Event)
                 .ToList();
 
             var viewModel = new AdminDashboardViewModel
             {
                 Bookings = GetBookings(),
                 Excursions = GetExcursionBookings(),
-                FinalBookings = GetFinalBookings()
             };
 
             return View(viewModel);
@@ -52,16 +50,8 @@ namespace DP.Controllers
             return _context.ExcursionBookings.ToList();
         }
 
-        private List<Booking> GetFinalBookings()
-{
-    return _context.Bookings
-        .Include(b => b.ProfProba)
-        .Include(b => b.Event)
-        .Include(b => b.Files)
-        .Include(b => b.User)
-        .Where(b => b.Files.Any()) // Фильтруем по наличию файлов
-        .ToList();
-}
+        
+
         public IActionResult Excursions()
         {
             if (HttpContext.Session.GetString("IsAdmin") == "true")
@@ -241,7 +231,6 @@ namespace DP.Controllers
         {
             var booking = _context.Bookings
                 .Include(b => b.ProfProba)
-                .Include(b => b.Event)
                 .FirstOrDefault(b => b.ID == id);
 
             if (booking == null)
@@ -279,7 +268,6 @@ namespace DP.Controllers
 
             // Обновляем только разрешенные поля
             booking.ProfProbaId = model.ProfProbaId;
-            booking.EventId = model.EventId;
             booking.FullName = model.FullName;
             booking.Email = model.Email;
             booking.PhoneNumber = model.PhoneNumber;
@@ -356,10 +344,8 @@ namespace DP.Controllers
         public IActionResult AllBookings()
         {
             var bookings = _context.Bookings
-                .Include(b => b.Event)
                 .Include(b => b.ProfProba)
                 .Include(b => b.Files)
-                .Include(b => b.User)
                 .ToList();
 
             var excursions = _context.ExcursionBookings

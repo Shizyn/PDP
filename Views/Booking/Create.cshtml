@@ -186,7 +186,7 @@
 <body>
     <div class="booking-container">
         <h1>Создать новую заявку</h1>
-        <form method="post" class="form-container">
+        <form method="post" enctype="multipart/form-data" class="form-container">
             <input type="hidden" name="eventType" value="@ViewBag.EventType" />
             <div class="form-group">
                 <label for="kvantum">Выберите профпробу:</label>
@@ -248,7 +248,12 @@
                     <option value="">-- Сначала выберите дату --</option>
                 </select>
             </div>
-            
+            <div class="file-section">
+                <a href="@Url.Action("DownloadExcelTemplate", "Booking")" target="_blank">
+                    Скачать шаблон участников
+                </a>
+                <input type="file" name="excelFile" accept=".xlsx,.xls" />
+            </div>
 
             <button type="submit" class="btn-submit">Создать заявку</button>
             <a href="/Booking" class="btn btn-secondary" style="margin-left: 10px;">Вернуться назад</a>
@@ -388,10 +393,27 @@
                         });
                 });
 
-                // Валидация формы перед отправкой
                 $('form.form-container').on('submit', function (e) {
+
                     clearAlerts();
                     let valid = true;
+                    let phone = document.getElementById('phone').value.trim();
+                    let fileInput = document.getElementById('fileInput');
+                    let errorDiv = document.getElementById('error');
+                    errorDiv.textContent = '';
+
+                    let phonePattern = /^\8 \(\d{3}\) \d{3}-\d{2}-\d{2}$/;
+
+                    if (!phonePattern.test(phone)) {
+                      errorDiv.textContent = 'Пожалуйста, введите телефон полностью в формате 8 (XXX) XXX-XX-XX';
+                      return;
+                    }
+
+                    if (!fileInput.files.length) {
+                      errorDiv.textContent = 'Пожалуйста, выберите файл для загрузки';
+                      return;
+                    }
+
                     const $dateField = $("#bookingDate");
                     const $timeField = $("#timeRange");
 

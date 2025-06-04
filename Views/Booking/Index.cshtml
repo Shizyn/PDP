@@ -179,8 +179,6 @@
 <body>
     <div class="container">
         <h1 class="centered">Все заявки</h1>
-
-        <!-- Заявки на профпробы -->
         @if (Model != null && Model.Any())
         {
             <h2 class="section-title">Заявки на профпробы</h2>
@@ -188,13 +186,14 @@
                 <thead>
                     <tr>
                         <th>Профпроба</th>
-                        <th>Событие</th>
                         <th>ФИО</th>
                         <th>Email</th>
                         <th>Телефон</th>
                         <th>Учебное заведение</th>
+                        <th>Кол-во чел</th>
                         <th>Дата</th>
                         <th>Время</th>
+                        <th>Файлы</th>
                         <th>Статус</th>
                     </tr>
                 </thead>
@@ -203,13 +202,31 @@
                     {
                         <tr style="@(booking.Status == "Новое" ? "background-color:#f2f2f2;" : booking.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : booking.Status == "Отклонено" ? "background-color:#ffa5a557;" : "")">
                             <td>@booking.ProfProba?.Name</td>
-                            <td>@booking.Event?.Name</td>
                             <td>@booking.FullName</td>
                             <td>@booking.Email</td>
                             <td>@booking.PhoneNumber</td>
                             <td>@booking.SchoolName</td>
+                            <td>@booking.PeopleCount</td>
                             <td>@booking.BookingDate.ToString("dd.MM.yyyy")</td>
                             <td>@booking.TimeRange</td>
+                            <td>
+                                @if (booking.Files != null && booking.Files.Any())
+                                {
+                                    foreach (var file in booking.Files)
+                                    {
+                                        <div>
+                                            <a class="download-link"
+                                               href="@Url.Action("DownloadFile", "Booking", new { id = file.Id })">
+                                                @file.FileName
+                                            </a>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <span>—</span>
+                                }
+                            </td>
                             <td>@booking.Status</td>
                         </tr>
                     }
@@ -228,8 +245,10 @@
                         <th>Email</th>
                         <th>Телефон</th>
                         <th>Школа</th>
+                        <th>Кол-во чел</th>
                         <th>Дата</th>
                         <th>Время</th>
+                        <th>Файл</th>
                         <th>Статус</th>
                     </tr>
                 </thead>
@@ -241,8 +260,27 @@
                             <td>@excursion.Email</td>
                             <td>@excursion.PhoneNumber</td>
                             <td>@excursion.SchoolName</td>
+                            <td>@excursion.PeopleCount</td>
                             <td>@excursion.BookingDate.ToShortDateString()</td>
                             <td>@excursion.TimeRange</td>
+                            <td>
+                                @if (excursion.Files != null && excursion.Files.Any())
+                                {
+                                    foreach (var file in excursion.Files)
+                                    {
+                                        <div>
+                                            <a class="download-link"
+                                               href="@Url.Action("DownloadExcursionFile", "Booking", new { id = file.Id })">
+                                                @file.FileName
+                                            </a>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <span>—</span>
+                                }
+                            </td>
                             <td>@excursion.Status</td>
                         </tr>
                     }
@@ -250,7 +288,7 @@
             </table>
         }
 
-        <!-- Окончательные заявки -->
+        @* <!-- Окончательные заявки -->
         <h2>Окончательные заявки</h2>
         @if (Model != null && Model.Any(b => b.Files != null && b.Files.Any()))
         {
@@ -289,7 +327,7 @@
         else
         {
             <p class="booking">Нет окончательных заявок</p>
-        }
+        } *@
 
         <!-- Сообщение, если заявок вообще нет -->
         @if ((Model == null || !Model.Any()) &&
@@ -311,7 +349,7 @@
         <div class="button-container">
             <a class="center-button" href="/Booking/Create?eventType=MasterClass">Добавить заявку на проф пробы</a>
             <a class="center-button" href="/Booking/ExcursionCreate">Добавить заявку на экскурсию</a>
-            <a class="center-button" href="/Booking/CreateFinalBooking">Добавить окончательную заявку</a>
+            @* <a class="center-button" href="/Booking/CreateFinalBooking">Добавить окончательную заявку</a> *@
             <a href="/" class="btn btn-secondary">Вернуться на главную</a>
         </div>
     </div>

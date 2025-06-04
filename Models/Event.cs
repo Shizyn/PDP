@@ -15,7 +15,6 @@ namespace DP.Models
         [ForeignKey("ProfProba")]
         public int ProfProbaId { get; set; }
         public ProfProba ProfProba { get; set; }
-        public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
     }
 }

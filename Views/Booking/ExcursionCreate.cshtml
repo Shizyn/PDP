@@ -148,9 +148,9 @@
 <body>
     <div class="booking-container">
         <h1>Создать новую заявку</h1>
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             <div class="form-group">
-                <label for="fullName">ФИО:</label>
+                <label for="fullName">ФИО ответственного:</label>
                 <input type="text" id="fullName" name="fullName" required />
             </div>
 
@@ -172,78 +172,100 @@
                 <label for="schoolName">Учебное заведение:</label>
                 <input type="text" id="schoolName" name="schoolName" required />
             </div>
-
             <div class="form-group">
-                <label for="bookingDate">Дата экскурсии:</label>
-                <input id="bookingDate" name="bookingDate" type="text" required />
+                <label for="PeopleCount">Количество человек:</label>
+                <input type="number" id="PeopleCount" name="peopleCount" min="1" max="50" value="1" required />
+            </div>
+            <div class="form-group">
+                <label for="BookingDate">Дата посещения:</label>
+                <input type="text" id="BookingDate" name="BookingDate" required autocomplete="off" />
             </div>
 
             <div class="form-group">
-                <label for="timeRange">Время:</label>
-                <select id="timeRange" name="timeRange" required disabled>
-                    <option value="">-- Сначала выберите дату --</option>
+                <label for="TimeRange">Временной интервал:</label>
+                <select id="TimeRange" name="TimeRange" required>
+                    <option value="">-- Выберите интервал --</option>
+                    
                 </select>
             </div>
-
+            <div class="form-group">
+                <label>Скачать шаблон списка участников (Excel):</label>
+                <a href="@Url.Action("DownloadExcursionExcelTemplate", "Excursion")" target="_blank">Скачать шаблон</a>
+                <input type="file" name="excelFile" accept=".xlsx,.xls" />
+            </div>
             <button type="submit" class="btn-submit">Отправить заявку</button>
             <a href="/Booking" class="btn">Назад</a>
         </form>
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7-beta.19/jquery.inputmask.min.js"></script>
         <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-        <script type="text/javascript">
+        <script>
             $(function () {
-                $("#phone").inputmask("8(999)-999-99-99");
+                var availableDates = [];
 
-                function clearAlerts() {
-                    $(".field-validation-error, .alert").remove();
+                $.ajax({
+                    url: '@Url.Action("GetAvailableExcursionDates", "Booking")',
+                    type: 'GET',
+                    success: function (dates) {
+                        availableDates = dates;
+                        initializeDatepicker();
+                    },
+                    error: function () {
+                        alert('Не удалось загрузить доступные даты');
+                    }
+                });
+
+                function initializeDatepicker() {
+                    $("#BookingDate").datepicker({
+                        dateFormat: "yy-mm-dd",
+                        changeMonth: true,
+                        changeYear: true,
+                        beforeShowDay: function (date) {
+                            var d = $.datepicker.formatDate("yy-mm-dd", date);
+                            if ($.inArray(d, availableDates) !== -1) {
+                                return [true, "", "Доступно"];
+                            } else {
+                                return [false, "", "Недоступно"];
+                            }
+                        },
+                        onSelect: function (dateText) {
+                            loadAvailableTimes(dateText);
+                        }
+                    });
+                }
+                function loadAvailableTimes(selectedDate) {
+                    $("#TimeRange").empty();
+                    $("#TimeRange").append($('<option>', {
+                        value: "",
+                        text: "-- Выберите время --"
+                    }));
+
+                    $.ajax({
+                        url: '@Url.Action("GetAvailableExcursionTimes", "Booking")',
+                        type: 'GET',
+                        data: { date: selectedDate },
+                        success: function (times) {
+                            if (times && times.length > 0) {
+                                $.each(times, function (i, tr) {
+                                    $("#TimeRange").append($('<option>', {
+                                        value: tr,
+                                        text: tr
+                                    }));
+                                });
+                            } else {
+                                $("#TimeRange").append($('<option>', {
+                                    value: "",
+                                    text: "Нет доступных интервалов"
+                                }));
+                            }
+                        },
+                        error: function () {
+                            alert('Не удалось загрузить доступные временные интервалы');
+                        }
+                    });
                 }
 
-                let availableDates = [];
-
-                // Загружаем доступные даты для экскурсий
-                $.getJSON("/Booking/GetAvailableExcursionDates")
-                    .done(function (data) {
-                        availableDates = data;
-
-                        $("#bookingDate").prop("disabled", false).datepicker({
-                            dateFormat: "yy-mm-dd",
-                            minDate: 0,
-                            maxDate: "+1m",
-                            beforeShowDay: function (date) {
-                                var formatted = $.datepicker.formatDate("yy-mm-dd", date);
-                                return [availableDates.includes(formatted)];
-                            },
-                            onSelect: function (selectedDate) {
-                                $("#timeRange")
-                                    .empty()
-                                    .append('<option value="12:00-14:00">12:00-14:00</option>')
-                                    .prop("disabled", false);
-                            }
-                        }).attr("readonly", true);
-                    })
-                    .fail(function () {
-                        $("#bookingDate").val("Ошибка загрузки дат").prop("disabled", true);
-                    });
-
-                // Валидация формы
-                $('form.form-container').on('submit', function (e) {
-                    clearAlerts();
-                    let valid = true;
-                    const $date = $("#bookingDate");
-                    const $time = $("#timeRange");
-
-                    if ($date.prop("disabled") || !$date.val()) {
-                        valid = false;
-                        $date.after('<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите дату!</div>');
-                    }
-                    if ($time.prop("disabled") || !$time.val()) {
-                        valid = false;
-                        $time.after('<div class="field-validation-error" style="color:#d52b1e;font-size:13px;">Выберите время!</div>');
-                    }
-
-                    if (!valid) e.preventDefault();
-                });
+                $("#PhoneNumber").inputmask("+7 (999) 999-99-99");
             });
         </script>
 

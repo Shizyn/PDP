@@ -203,25 +203,7 @@
                 </select>
             </div>
 
-            <div class="form-group">
-                <label for="event">Выберите событие:</label>
-                <select id="event" name="EventID" required>
-                    @if (ViewBag.Events != null && ViewBag.Events is IEnumerable<DP.Models.Event>)
-                    {
-                        foreach (var evt in (IEnumerable<DP.Models.Event>)ViewBag.Events)
-                        {
-                            <option value="@evt.ID"
-                                    selected="@(evt.ID == Model?.EventId)">
-                                @evt.Name
-                            </option>
-                        }
-                    }
-                    else
-                    {
-                        <option disabled selected>Нет доступных событий</option>
-                    }
-                </select>
-            </div>
+            
 
             <div class="form-group">
                 <label for="FullName">ФИО:</label>
@@ -289,7 +271,6 @@
 
                     // Инициализация текущих значений
                     const currentProfProbaId = '@Model.ProfProbaId';
-                    const currentEventId = '@Model.EventId';
 
                     if (currentProfProbaId) {
                         loadEvents(currentProfProbaId, currentEventId);
