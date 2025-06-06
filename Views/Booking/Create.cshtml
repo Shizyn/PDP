@@ -207,7 +207,7 @@
             <div id="eventDetails" class="event-details"></div>
 
             <div class="form-group">
-                <label for="fullName">ФИО:</label>
+                <label for="fullName">ФИО заявителя:</label>
                 <input type="text" id="fullName" name="fullName" required />
             </div>
             @* <div class="form-group">
@@ -260,7 +260,6 @@
         </form>
         <script type="text/javascript">
             $(document).ready(function () {
-                // Привязка маски к полю телефона
                 $("#phone").inputmask("8(999)-999-99-99");
 
                 // Функция для очистки ошибок/сообщений об ошибках
@@ -271,7 +270,6 @@
                 // Хранит доступные даты вида "yyyy-mm-dd" для выбранной профпробы
                 let availableDates = [];
 
-                // При изменении выбора профпробы
                 $("#ProfProbaId").on("change", function () {
                     clearAlerts();
 
@@ -294,7 +292,7 @@
                         return;
                     }
 
-                    // 1) Загружаем события для выбранной профпробы (без связи с датами/временем)
+                    //Загружаем события для выбранной профпробы (без связи с датами/временем)
                     $.getJSON("/Booking/GetEventsByProfProba", { profProbaId: profProbaId })
                         .done(function (events) {
                             if (events.length === 0) {
@@ -334,7 +332,7 @@
                             $("#eventsList").append("<div>Ошибка загрузки событий</div>");
                         });
 
-                    // 2) Загружаем доступные даты для выбранной профпробы (игнорируем событие)
+                    //Загружаем доступные даты для выбранной профпробы (игнорируем событие)
                     $.getJSON("/Booking/GetAvailableDates", { profProbaId: profProbaId })
                         .done(function (dateList) {
                             // dateList — массив строк "yyyy-MM-dd"
@@ -372,7 +370,7 @@
                                                 return;
                                             }
 
-                                            $("#timeRange").empty().append('<option value="">Выберите время</option>');
+                                            $("#timeRange").empty().append('<option value="">Выберите время</option>');2
                                             timeRanges.forEach(function (range) {
                                                 $("#timeRange").append(`<option value="${range}">${range}</option>`);
                                             });
