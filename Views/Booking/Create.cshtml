@@ -333,62 +333,67 @@
                         });
 
                     //Загружаем доступные даты для выбранной профпробы (игнорируем событие)
-                    $.getJSON("/Booking/GetAvailableDates", { profProbaId: profProbaId })
-                        .done(function (dateList) {
-                            // dateList — массив строк "yyyy-MM-dd"
-                            availableDates = dateList;
+                           $.getJSON("/Booking/GetAvailableDates", { profProbaId: profProbaId })
+            .done(function (dateList) {
+                // Преобразуем строки дат в "yyyy-mm-dd" — именно такой формат нужен для сравнения
+                availableDates = dateList.map(dateStr => {
+                    const d = new Date(dateStr);
+                    return $.datepicker.formatDate("yy-mm-dd", d);
+                });
 
-                            // Инициализируем datepicker
-                            $("#bookingDate")
-                                .prop("disabled", false)
-                                .datepicker({
-                                    dateFormat: "yy-mm-dd",
-                                    minDate: 0,
-                                    maxDate: "+1m",
-                                    beforeShowDay: function (date) {
-                                        const formatted = $.datepicker.formatDate("yy-mm-dd", date);
-                                        return [availableDates.includes(formatted)];
-                                    },
-                                    onSelect: function (dateText) {
-                                        clearAlerts();
+                $("#bookingDate")
+                    .prop("disabled", false)
+                    .datepicker("destroy") // обязательно очищаем старый datepicker
+                    .datepicker({
+                        dateFormat: "yy-mm-dd",
+                        minDate: 0,
+                        maxDate: "+1m",
+                        beforeShowDay: function (date) {
+                            const formatted = $.datepicker.formatDate("yy-mm-dd", date);
+                            return [availableDates.includes(formatted)];
+                        },
+                        onSelect: function (dateText) {
+                            clearAlerts();
 
-                                        // Сброс и пока «Загрузка...» для селекта времени
-                                        $("#timeRange")
-                                            .empty()
-                                            .append('<option value="">Загрузка...</option>')
-                                            .prop("disabled", true);
-
-                                        // Запрашиваем свободные интервалы для выбранной даты (без eventId)
-                                        $.getJSON("/Booking/GetAvailableTimes", {
-                                            profProbaId: profProbaId,
-                                            date:        dateText
-                                        }).done(function (timeRanges) {
-                                            if (timeRanges.length === 0) {
-                                                $("#timeRange")
-                                                    .empty()
-                                                    .append('<option value="">Нет доступных времён</option>');
-                                                return;
-                                            }
-
-                                            $("#timeRange").empty().append('<option value="">Выберите время</option>');2
-                                            timeRanges.forEach(function (range) {
-                                                $("#timeRange").append(`<option value="${range}">${range}</option>`);
-                                            });
-                                            $("#timeRange").prop("disabled", false);
-                                        }).fail(function () {
-                                            $("#timeRange")
-                                                .empty()
-                                                .append('<option value="">Ошибка загрузки времён</option>');
-                                        });
-                                    }
-                                })
-                                .attr("readonly", true);
-                        })
-                        .fail(function () {
-                            $("#bookingDate")
-                                .val("Ошибка загрузки дат")
+                            $("#timeRange")
+                                .empty()
+                                .append('<option value="">Загрузка...</option>')
                                 .prop("disabled", true);
-                        });
+
+                            $.getJSON("/Booking/GetAvailableTimes", {
+                                profProbaId: profProbaId,
+                                date: dateText
+                            }).done(function (timeRanges) {
+                                if (timeRanges.length === 0) {
+                                    $("#timeRange")
+                                        .empty()
+                                        .append('<option value="">Нет доступных времён</option>');
+                                    return;
+                                }
+
+                                $("#timeRange")
+                                    .empty()
+                                    .append('<option value="">Выберите время</option>');
+
+                                timeRanges.forEach(function (range) {
+                                    $("#timeRange").append(`<option value="${range}">${range}</option>`);
+                                });
+
+                                $("#timeRange").prop("disabled", false);
+                            }).fail(function () {
+                                $("#timeRange")
+                                    .empty()
+                                    .append('<option value="">Ошибка загрузки времён</option>');
+                            });
+                        }
+                    })
+                    .attr("readonly", true);
+            })
+            .fail(function () {
+                $("#bookingDate")
+                    .val("Ошибка загрузки дат")
+                    .prop("disabled", true);
+            });
                 });
 
                 $('form.form-container').on('submit', function (e) {
@@ -404,6 +409,7 @@
 
                     if (!phonePattern.test(phone)) {
                       errorDiv.textContent = 'Пожалуйста, введите телефон полностью в формате 8 (XXX) XXX-XX-XX';
+                      return;
                       return;
                     }
 

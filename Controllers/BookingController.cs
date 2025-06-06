@@ -81,71 +81,53 @@ namespace DP.Controllers
                 description = ev.Description,
             });
         }
+        
+        [HttpGet]
+        public JsonResult GetAvailableDates(int profProbaId)
+        {
+            var today = DateTime.Today;
+            var availableDates = Enumerable.Range(0, 14)
+                                           .Select(offset => today.AddDays(offset).ToString("yyyy-MM-dd"))
+                                           .ToList();
+            return Json(availableDates);
+        }
+        [HttpGet]
         public JsonResult GetAvailableTimes(int eventId, DateTime date)
         {
-            var times = _context.AvailableSlots
-                .Where(s => s.ProfProbaId == eventId && s.SlotDate == date)
-                .Select(s => s.TimeRange)
-                .ToList();
+            var maxBookings = 3;
 
-            return Json(times);
-        }
-        [HttpGet]
-        public IActionResult GetAvailableDates(int profProbaId)
-        {
-            var allSlots = _context.AvailableSlots
-                .Where(s => s.ProfProbaId == profProbaId)
-                .ToList();
+            var totalBookings = _context.Bookings.Count(b => b.BookingDate.Date == date.Date) +
+                                _context.ExcursionBookings.Count(e => e.BookingDate.Date == date.Date);
 
-            var bookedSlots = _context.Bookings
-                .Where(b =>
-                    b.ProfProbaId == profProbaId)
-                .Select(b => new { Date = b.BookingDate, Time = b.TimeRange })
-                .ToList();
-
-            var freeDates = allSlots
-                .GroupBy(s => s.SlotDate.Date)
-                .Where(g =>
-                {
-                    return g.Any(slot =>
-                        !bookedSlots.Any(bs =>
-                            bs.Date == slot.SlotDate.Date &&
-                            bs.Time == slot.TimeRange));
-                })
-                .Select(g => g.Key.ToString("yyyy-MM-dd"))
-                .ToList();
-
-            return Json(freeDates);
-        }
-        [HttpGet]
-        public IActionResult GetAvailableTimes(int profProbaId, string date)
-        {
-            if (!DateTime.TryParseExact(date, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var targetDate))
+            if (totalBookings >= maxBookings)
             {
-                return BadRequest("Неверный формат даты");
+                return Json(new List<string>()); // Нет доступных слотов
             }
 
-            var dailySlots = _context.AvailableSlots
-                .Where(s =>
-                    s.ProfProbaId == profProbaId &&
-                    s.SlotDate.Date == targetDate.Date)
-                .ToList();
-
-            var bookedSlots = _context.Bookings
-                .Where(b =>
-                    b.ProfProbaId == profProbaId &&
-                    b.BookingDate.Date == targetDate.Date)
+            var bookedTimes = _context.Bookings
+                .Where(b => b.BookingDate.Date == date.Date)
                 .Select(b => b.TimeRange)
                 .ToList();
 
-            var freeTimes = dailySlots
-                .Where(s => !bookedSlots.Contains(s.TimeRange))
-                .OrderBy(s => s.TimeRange) 
-                .Select(s => s.TimeRange)
-                .Distinct()
+            var excursionTimes = _context.ExcursionBookings
+                .Where(e => e.BookingDate.Date == date.Date)
+                .Select(e => e.TimeRange)
                 .ToList();
 
-            return Json(freeTimes);
+            var allBooked = bookedTimes.Concat(excursionTimes).ToList();
+
+            var allSlots = new List<string>
+            {
+                "10:00-11:00",
+                "11:00-12:00",
+                "12:00-13:00",
+                "13:00-14:00",
+                "14:00-15:00",
+                "15:00-16:00"
+            };
+
+            var available = allSlots.Except(allBooked).ToList();
+            return Json(available);
         }
 
         [HttpGet]
@@ -163,16 +145,19 @@ namespace DP.Controllers
             {
                 return RedirectToAction("Login", "Home");
             }
-            
 
-            // Проверяем, что выбранный слот действительно есть в таблице ExcursionSlot
-            var slotExists = _context.ExcursionSlots.Any(s =>
-                s.SlotDate.Date == bookingDate.Date &&
-                s.TimeRange == timeRange);
 
-            if (!slotExists)
+            int excursionCount = _context.ExcursionBookings
+    .Count(e => e.BookingDate.Date == bookingDate.Date && e.TimeRange == timeRange);
+
+            int profprobCount = _context.Bookings
+                .Count(p => p.BookingDate.Date == bookingDate.Date && p.TimeRange == timeRange);
+
+            int totalEvents = excursionCount + profprobCount;
+
+            if (totalEvents >= 3)
             {
-                ModelState.AddModelError("", "Выбранный временной интервал недоступен.");
+                ModelState.AddModelError("", "На выбранную дату и время уже запланировано максимальное количество мероприятий (3). Пожалуйста, выберите другой слот.");
                 return View("ExcursionCreate");
             }
 
@@ -242,48 +227,59 @@ namespace DP.Controllers
         [HttpGet]
         public IActionResult GetAvailableExcursionDates()
         {
-            var freeSlotsQuery = _context.ExcursionSlots
-                .Where(slot => !_context.ExcursionBookings.Any(b =>
-                    b.BookingDate.Date == slot.SlotDate.Date &&
-                    b.TimeRange == slot.TimeRange));
-
-            var freeDates = freeSlotsQuery
-                .Select(slot => slot.SlotDate.Date)
+            var allDates = _context.ExcursionBookings
+                .Select(d => d.BookingDate)
                 .Distinct()
                 .ToList();
 
-            var result = freeDates
-                .Select(d => d.ToString("yyyy-MM-dd"))
-                .ToList();
+            var availableDates = new List<string>();
 
-            return Json(result);
+            foreach (var date in allDates)
+            {
+                int excursionCount = _context.ExcursionBookings.Count(e => e.BookingDate == date);
+                int profprobCount = _context.Bookings.Count(p => p.BookingDate == date);
+
+                if ((excursionCount + profprobCount) < 3)
+                {
+                    availableDates.Add(date.ToString("yyyy-MM-dd"));
+                }
+            }
+
+            return Json(availableDates);
         }
 
         [HttpGet]
         public IActionResult GetAvailableExcursionTimes(string date)
         {
-            if (!DateTime.TryParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var targetDate))
-            {
-                return BadRequest("Неверный формат даты");
-            }
+            if (!DateTime.TryParse(date, out var selectedDate))
+                return BadRequest();
 
-            var dailySlots = _context.ExcursionSlots
-                .Where(s => s.SlotDate.Date == targetDate.Date)
-                .Select(s => s.TimeRange)
-                .Distinct()
-                .ToList();
+            // Все возможные интервалы (например, каждый час с 10 до 17)
+            var allTimeSlots = new List<string>
+    {
+        "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"
+    };
 
-            var bookedTimes = _context.ExcursionBookings
-                .Where(e => e.BookingDate.Date == targetDate.Date)
+            // Уже занятые интервалы на эту дату (экскурсии и профпробы)
+            var busyTimes = _context.ExcursionBookings
+                .Where(e => e.BookingDate == selectedDate)
                 .Select(e => e.TimeRange)
                 .ToList();
 
-            var freeTimes = dailySlots
-                .Where(tr => !bookedTimes.Contains(tr))
-                .OrderBy(tr => tr)
-                .ToList();
+            busyTimes.AddRange(_context.Bookings
+                .Where(p => p.BookingDate == selectedDate)
+                .Select(p => p.TimeRange));
 
-            return Json(freeTimes);
+            // Группируем по времени
+            var grouped = busyTimes.GroupBy(t => t).ToDictionary(g => g.Key, g => g.Count());
+
+            // Разрешаем те интервалы, где общее число мероприятий < 3
+            var availableTimes = allTimeSlots.Where(t =>
+            {
+                return !grouped.ContainsKey(t) || grouped[t] < 3;
+            }).ToList();
+
+            return Json(availableTimes);
         }
         [HttpGet]
         public IActionResult DownloadExcursionFile(int id)

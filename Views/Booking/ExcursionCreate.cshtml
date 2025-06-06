@@ -201,17 +201,18 @@
         <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
         <script>
             $(function () {
-                var availableDates = [];
+                let availableDates = [];
 
+                // Загрузка доступных дат
                 $.ajax({
-                    url: '@Url.Action("GetAvailableExcursionDates", "Booking")',
+                    url: '/Booking/GetAvailableDates',
                     type: 'GET',
                     success: function (dates) {
                         availableDates = dates;
                         initializeDatepicker();
                     },
                     error: function () {
-                        alert('Не удалось загрузить доступные даты');
+                        alert('Не удалось загрузить доступные даты.');
                     }
                 });
 
@@ -219,53 +220,50 @@
                     $("#BookingDate").datepicker({
                         dateFormat: "yy-mm-dd",
                         changeMonth: true,
-                        changeYear: true,
+                        changeYear: false,
                         beforeShowDay: function (date) {
-                            var d = $.datepicker.formatDate("yy-mm-dd", date);
-                            if ($.inArray(d, availableDates) !== -1) {
-                                return [true, "", "Доступно"];
-                            } else {
-                                return [false, "", "Недоступно"];
-                            }
+                            const formatted = $.datepicker.formatDate("yy-mm-dd", date);
+                            const isAvailable = availableDates.includes(formatted);
+                            return [isAvailable, "", isAvailable ? "Доступно" : "Недоступно"];
                         },
-                        onSelect: function (dateText) {
-                            loadAvailableTimes(dateText);
+                        onSelect: function (selectedDate) {
+                            loadAvailableTimes(selectedDate);
                         }
                     });
                 }
+
                 function loadAvailableTimes(selectedDate) {
-                    $("#TimeRange").empty();
-                    $("#TimeRange").append($('<option>', {
-                        value: "",
-                        text: "-- Выберите время --"
-                    }));
+                    $("#TimeRange").empty().append(
+                        $('<option>', { value: "", text: "-- Выберите время --" })
+                    );
 
                     $.ajax({
-                        url: '@Url.Action("GetAvailableExcursionTimes", "Booking")',
+                        url: '/Booking/GetAvailableTimes',
                         type: 'GET',
-                        data: { date: selectedDate },
+                        data: { eventId: 0, date: selectedDate }, // eventId не используется, можно передать 0
                         success: function (times) {
                             if (times && times.length > 0) {
-                                $.each(times, function (i, tr) {
+                                $.each(times, function (index, time) {
                                     $("#TimeRange").append($('<option>', {
-                                        value: tr,
-                                        text: tr
+                                        value: time,
+                                        text: time
                                     }));
                                 });
                             } else {
                                 $("#TimeRange").append($('<option>', {
                                     value: "",
-                                    text: "Нет доступных интервалов"
+                                    text: "Нет доступных времён"
                                 }));
                             }
                         },
                         error: function () {
-                            alert('Не удалось загрузить доступные временные интервалы');
+                            alert('Не удалось загрузить доступные временные интервалы.');
                         }
                     });
                 }
 
-                $("#PhoneNumber").inputmask("+7 (999) 999-99-99");
+                // Маска для телефона
+                $("#phone").inputmask("8(999)-999-99-99");
             });
         </script>
 
