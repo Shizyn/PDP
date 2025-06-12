@@ -1,22 +1,20 @@
-﻿@model DP.Models.RegInModel
-
-<head>
+﻿<head>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7-beta.19/jquery.inputmask.min.js"></script>
 </head>
 
 <div class="registration-container">
     <h1>Зарегистрироваться</h1>
+    <p>Уже есть аккаунт? <a href="@Url.Action("Login","Home")" class="login-link">Войти</a></p>
 
-    <p>Уже есть аккаунт? <a href="/home/login" class="login-link">Войти</a></p>
+    
 
-    <form asp-action="RegIn" method="post" asp-antiforgery="true" class="registration-form">
+    <form id="regForm" asp-action="RegIn" method="post" asp-antiforgery="true" class="registration-form">
         <div class="form-group">
             <label asp-for="FullName" class="form-label"></label>
             <input asp-for="FullName" class="form-input" name="FullName" placeholder="Введите ваше ФИО" />
             <span asp-validation-for="FullName" class="validation-error text-danger"></span>
         </div>
-
         <script type="text/javascript">
             $(document).ready(function () {
                 $("#Phone").inputmask("8(999)-999-99-99");
@@ -40,16 +38,24 @@
             <input asp-for="Password" type="password" class="form-input" name="Password" placeholder="Введите пароль" />
             <span asp-validation-for="Password" class="validation-error text-danger"></span>
         </div>
-
         <button type="submit" class="btn-submit">Зарегистрироваться</button>
     </form>
 </div>
 
-@section Scripts {
-    @{
+
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $("#Phone").inputmask("8(999)-999-99-99");
+
+                // Запрет на ввод цифр в поле ФИО
+                $("#FullName").on("input", function () {
+                    this.value = this.value.replace(/[0-9]/g, ''); // удаляет цифры
+                });
+            });
+        </script>
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-}
+    
+
 @if (!ViewData.ModelState.IsValid)
 {
     <div class="alert alert-danger">
@@ -72,7 +78,6 @@
         min-height: 100vh;
         margin: 0;
         padding: 20px;
-        background-image: url(/images/newkvant2.png);
         background-repeat: no-repeat;
         background-size: cover;
         background-position: center;

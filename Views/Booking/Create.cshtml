@@ -208,34 +208,60 @@
 
             <div class="form-group">
                 <label for="fullName">ФИО заявителя:</label>
-                <input type="text" id="fullName" name="fullName" required />
-            </div>
-            @* <div class="form-group">
-                <label for="birthDate">Дата рождения:</label>
-                <input type="date" id="birthDate" name="birthDate" required max="@DateTime.Now.ToString("yyyy-MM-dd")" />
-            </div> *@
-            <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" placeholder="Укажите почту, которая была при авторизации" required />
+                <input type="text"
+                       id="fullName"
+                       name="fullName"
+                       required
+                       placeholder="Введите ваше ФИО"
+                       onkeypress="if (event.charCode >= 48 && event.charCode <= 57) event.preventDefault();"
+                       oninput="this.value = this.value.replace(/\d/g, '');" />
             </div>
 
-            <script type="text/javascript">
-                $(document).ready(function () {
-                    $("#phone").inputmask("8(999)-999-99-99");
-                });
-            </script>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email"
+                       id="email"
+                       name="email"
+                       required
+                       placeholder="Введите ваш email"
+                       onkeypress="if (event.charCode === 32) event.preventDefault();"
+                       oninput="this.value = this.value.replace(/\s/g, '');" />
+            </div>
+            @* <div class="form-group" id="codeSection" style="display:none;">
+                <label for="confirmationCode">Код подтверждения:</label>
+                <input type="text" id="confirmationCode" placeholder="Введите код из письма" />
+                <button type="button" id="verifyCodeBtn" class="btn" style="margin-top: 10px;">Подтвердить</button>
+            </div> *@
 
             <div class="form-group">
                 <label for="phone">Телефон:</label>
-                <input type="tel" id="phone" name="phoneNumber" placeholder="8(XXX)-XXX-XX-XX" required />
-            </div>           
+                <input type="tel"
+                       id="phone"
+                       name="phoneNumber"
+                       placeholder="8(XXX)-XXX-XX-XX"
+                       required />
+                <span id="phoneError" class="validation-error text-danger" style="display:none; font-size:13px; margin-top:5px;"></span>
+            </div>
+
             <div class="form-group">
                 <label for="schoolName">Учебное заведение:</label>
-                <input type="text" id="schoolName" name="schoolName" placeholder="Введите название вашего учебного заведения" required />
-			</div>
+                <input type="text"
+                       id="schoolName"
+                       name="schoolName"
+                       placeholder="Введите название вашего учебного заведения"
+                       required
+                       onkeypress="/* запретим только управляющие символы */"
+                       oninput="/* здесь можно добавить чистку лишних пробелов, если нужно */" />
+            </div>
+
             <div class="form-group">
                 <label for="peopleCount">Количество человек:</label>
-                <input type="number" id="peopleCount" name="peopleCount" min="1" max="30" required />
+                <input type="number"
+                       id="peopleCount"
+                       name="peopleCount"
+                       min="1"
+                       max="30"
+                       required />
             </div>
             <div class="form-group">
                 <label for="bookingDate">Дата бронирования:</label>
@@ -260,24 +286,43 @@
         </form>
         <script type="text/javascript">
             $(document).ready(function () {
-                $("#phone").inputmask("8(999)-999-99-99");
+                $("#phone").inputmask("9(999)-999-99-99");
+                        $("#fullName")
+                .on("keypress", function(e) {
+                    if (e.which >= 48 && e.which <= 57) e.preventDefault();
+                })
+                .on("input", function() {
+                    this.value = this.value.replace(/\d/g, '');
+                });
 
-                // Функция для очистки ошибок/сообщений об ошибках
+            $("#email")
+                .on("keypress", function(e) {
+                    if (e.which === 32) e.preventDefault();
+                })
+                .on("input", function() {
+                    this.value = this.value.replace(/\s/g, '');
+                });
+
+            $("#phone")
+                .on("keypress", function(e) {
+                    var ch = String.fromCharCode(e.which);
+                    if (!/[0-9()+\-]/.test(ch)) e.preventDefault();
+                })
+                .on("input", function() {
+                    this.value = this.value.replace(/[^0-9()+\-]/g, '');
+                });
                 function clearAlerts() {
                     $('.field-validation-error, .alert').remove();
                 }
 
-                // Хранит доступные даты вида "yyyy-mm-dd" для выбранной профпробы
                 let availableDates = [];
 
                 $("#ProfProbaId").on("change", function () {
                     clearAlerts();
 
-                    // Сбрасываем список событий и детали
                     $("#eventsList").empty();
                     $("#eventDetails").hide().empty();
 
-                    // Сбрасываем поля даты/времени
                     $("#bookingDate")
                         .val("")
                         .prop("disabled", true)
@@ -292,7 +337,6 @@
                         return;
                     }
 
-                    //Загружаем события для выбранной профпробы (без связи с датами/временем)
                     $.getJSON("/Booking/GetEventsByProfProba", { profProbaId: profProbaId })
                         .done(function (events) {
                             if (events.length === 0) {

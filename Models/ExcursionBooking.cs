@@ -16,8 +16,7 @@ namespace DP.Models
         public string Email { get; set; }
 
         [Required(ErrorMessage = "Телефон обязателен")]
-        [RegularExpression(@"^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$",
-            ErrorMessage = "Телефон должен быть в формате +7 (999) 999-99-99")]
+        
         public string PhoneNumber { get; set; }
 
         [Required(ErrorMessage = "Школа обязательна")]
@@ -31,7 +30,6 @@ namespace DP.Models
         public string TimeRange { get; set; }
 
         [Required(ErrorMessage = "Количество человек обязательно")]
-        [Range(1, 50, ErrorMessage = "Количество человек должно быть от 1 до 50")]
         public int PeopleCount { get; set; } = 1;
 
         public string Status { get; set; } = "Новое";

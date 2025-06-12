@@ -254,7 +254,6 @@ namespace DP.Controllers
             if (!DateTime.TryParse(date, out var selectedDate))
                 return BadRequest();
 
-            // Все возможные интервалы (например, каждый час с 10 до 17)
             var allTimeSlots = new List<string>
     {
         "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"
@@ -270,10 +269,8 @@ namespace DP.Controllers
                 .Where(p => p.BookingDate == selectedDate)
                 .Select(p => p.TimeRange));
 
-            // Группируем по времени
             var grouped = busyTimes.GroupBy(t => t).ToDictionary(g => g.Key, g => g.Count());
 
-            // Разрешаем те интервалы, где общее число мероприятий < 3
             var availableTimes = allTimeSlots.Where(t =>
             {
                 return !grouped.ContainsKey(t) || grouped[t] < 3;
@@ -303,7 +300,19 @@ namespace DP.Controllers
 
             return View();
         }
+        public ActionResult DownloadFile(int id)
+        {
+            var file = _context.UploadedFiles
+                .Include(f => f.Booking)
+                .FirstOrDefault(f => f.Id == id);
 
+            if (file == null)
+            {
+                return View(); 
+            }
+
+            return File(file.Content, System.Net.Mime.MediaTypeNames.Application.Octet, file.FileName);
+        }
         [HttpPost]
         public async Task<IActionResult> Create(int profProbaId, string fullName, string email, string phoneNumber, string schoolName, DateTime bookingDate, string timeRange, int peopleCount, IFormFile excelFile)
         {
@@ -339,7 +348,6 @@ namespace DP.Controllers
                     ViewBag.ProfProby = _context.ProfProby.ToList();
                     return View();
                 }
-                //создание новой заявки
                 var booking = new Booking
                 {
                     ProfProbaId = profProbaId,
@@ -358,7 +366,6 @@ namespace DP.Controllers
 
                 try
                 {
-                    // Сохраняем Booking, чтобы получить его Id
                     _context.Bookings.Add(booking);
                     await _context.SaveChangesAsync();
 

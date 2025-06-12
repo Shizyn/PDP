@@ -148,61 +148,92 @@
 <body>
     <div class="booking-container">
         <h1>Создать новую заявку</h1>
-        <form method="post" enctype="multipart/form-data">
+        <form id="bookingForm" method="post" enctype="multipart/form-data" class="form-container">
+            <input type="hidden" name="eventType" value="@ViewBag.EventType" />
+
             <div class="form-group">
                 <label for="fullName">ФИО заявителя:</label>
-                <input type="text" id="fullName" name="fullName" required />
-            </div> 
+                <input type="text" id="fullName" name="fullName" required placeholder="Введите ваше ФИО" />
+            </div>
 
             <div class="form-group">
                 <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required />
+                <input type="email" id="email" name="email" required placeholder="Введите ваш email" />
             </div>
-            <script type="text/javascript">
-                $(document).ready(function () {
-                    $("#phone").inputmask("8(999)-999-99-99");
-                });
-            </script>
+
             <div class="form-group">
                 <label for="phone">Телефон:</label>
-                <input type="tel" id="phone" name="phoneNumber" placeholder="8(XXX)-XXX-XX-XX" required />
+                <input type="tel" id="phone" name="phoneNumber" required placeholder="8(XXX)-XXX-XX-XX" />
+                <span id="phoneError" class="validation-error text-danger" style="display:none;font-size:13px;margin-top:5px;"></span>
             </div>
 
             <div class="form-group">
                 <label for="schoolName">Учебное заведение:</label>
-                <input type="text" id="schoolName" name="schoolName" required />
+                <input type="text" id="schoolName" name="schoolName" required placeholder="Введите название вашего учебного заведения" />
             </div>
+
             <div class="form-group">
-                <label for="PeopleCount">Количество человек:</label>
-                <input type="number" id="PeopleCount" name="peopleCount" min="1" max="50" value="1" required />
+                <label for="peopleCount">Количество человек:</label>
+                <input type="number" id="peopleCount" name="peopleCount" min="1" max="50" value="1" required />
             </div>
+
             <div class="form-group">
                 <label for="BookingDate">Дата посещения:</label>
-                <input type="text" id="BookingDate" name="BookingDate" required autocomplete="off" />
+                <input type="text" id="BookingDate" name="BookingDate" required autocomplete="off" readonly />
             </div>
 
             <div class="form-group">
                 <label for="TimeRange">Время начала:</label>
                 <select id="TimeRange" name="TimeRange" required>
                     <option value="">-- Выберите время начала --</option>
-                    
                 </select>
             </div>
+
             <div class="form-group">
                 <label>Скачать шаблон списка участников (Excel):</label>
-                <a href="@Url.Action("DownloadExcursionExcelTemplate", "Excursion")" target="_blank">Скачать шаблон</a>
+                <a href="@Url.Action("DownloadExcelTemplate","Booking")" target="_blank">Скачать шаблон участников</a>
                 <input type="file" name="excelFile" accept=".xlsx,.xls" />
             </div>
+
             <button type="submit" class="btn-submit">Отправить заявку</button>
             <a href="/Booking" class="btn">Назад</a>
         </form>
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7-beta.19/jquery.inputmask.min.js"></script>
-        <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-        <script>
-            $(function () {
-                let availableDates = [];
 
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <p>@error.ErrorMessage</p>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Скрипты -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7-beta.19/jquery.inputmask.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script type="text/javascript">
+        $(function() {
+          // $("#phone").inputmask("9(999)-999-99-99");
+
+          $("#fullName")
+            .on("keypress", e => { if (e.which >= 48 && e.which <= 57) e.preventDefault(); })
+            .on("input",  function() { this.value = this.value.replace(/\d/g, ''); });
+
+          $("#email")
+            .on("keypress", e => { if (e.which === 32) e.preventDefault(); })
+            .on("input",  function() { this.value = this.value.replace(/\s/g, ''); });
+
+            $("#phone")
+        .on("keypress", e => {
+          const ch = String.fromCharCode(e.which);
+          if (!/[0-9()+\-]/.test(ch)) e.preventDefault();
+        })
+        .on("input", function() {
+          this.value = this.value.replace(/[^0-9()+\-]/g, '');
+        });
                 // Загрузка доступных дат
                 $.ajax({
                     url: '/Booking/GetAvailableDates',

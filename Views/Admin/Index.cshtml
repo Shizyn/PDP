@@ -268,17 +268,17 @@
                                     <input type="hidden" name="id" value="@booking.ID" />
                                     <button type="submit">Отклонить</button>
                                 </form>
-                                <form method="get" action="/Admin/Update">
+                                @* <form method="get" action="/Admin/Update">
                                     <input type="hidden" name="id" value="@booking.ID" />
                                     <button type="submit">Редактировать</button>
-                                </form>
+                                </form> *@
                             }
                             @if (booking.Status == "Подтверждено")
                             {
-                                <form method="get" action="/Admin/Update">
+                                @* <form method="get" action="/Admin/Update">
                                     <input type="hidden" name="id" value="@booking.ID" />
                                     <button type="submit">Редактировать</button>
-                                </form>
+                                </form> *@
                             }
                             <form method="post" action="/Admin/Delete">
                                 <input type="hidden" name="id" value="@booking.ID" />
@@ -313,25 +313,35 @@
                         <td>@excursion.FullName</td>
                         <td>@excursion.Email</td>
                         <td>@excursion.SchoolName</td>
-                        <td>@excursion.BookingDate.ToShortDateString()</td>
+                        <td>@excursion.BookingDate.ToString("dd.MM.yyyy")</td>
                         <td>@excursion.TimeRange</td>
                         <td>@excursion.Status</td>
                         <td>
-                            <form method="post" action="/Admin/ConfirmExcursion" style="display:inline;">
+                            @if (excursion.Status == "Новое")
+                            {
+                                <form method="post" action="/Admin/ConfirmExcursion">
+                                    <input type="hidden" name="id" value="@excursion.Id" />
+                                    <button type="submit">Подтвердить</button>
+                                </form>
+                                <form method="post" action="/Admin/RejectExcursion">
+                                    <input type="hidden" name="id" value="@excursion.Id" />
+                                    <button type="submit">Отклонить</button>
+                                </form>
+                                @* <form method="get" action="/Admin/EditExcursion">
+                                    <input type="hidden" name="id" value="@excursion.Id" />
+                                    <button type="submit">Редактировать</button>
+                                </form> *@
+                            }
+                            @if (excursion.Status == "Подтверждено")
+                            {
+                                @* <form method="get" action="/Admin/EditExcursion">
+                                    <input type="hidden" name="id" value="@excursion.Id" />
+                                    <button type="submit">Редактировать</button>
+                                </form> *@
+                            }
+                            <form method="post" action="/Admin/DeleteExcursion" onsubmit="return confirm('Удалить экскурсию?');">
                                 <input type="hidden" name="id" value="@excursion.Id" />
-                                <button type="submit" class="btn btn-success btn-sm">Подтвердить</button>
-                            </form>
-                            <form method="post" action="/Admin/RejectExcursion" style="display:inline;">
-                                <input type="hidden" name="id" value="@excursion.Id" />
-                                <button type="submit" class="btn btn-secondary btn-sm">Отклонить</button>
-                            </form>
-                            <form method="get" action="/Admin/EditExcursion" style="display:inline;">
-                                <input type="hidden" name="id" value="@excursion.Id" />
-                                <button type="submit" class="btn btn-warning btn-sm">Редактировать</button>
-                            </form>
-                            <form method="post" action="/Admin/DeleteExcursion" style="display:inline;" onsubmit="return confirm('Удалить экскурсию?');">
-                                <input type="hidden" name="id" value="@excursion.Id" />
-                                <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                                <button type="submit">Удалить</button>
                             </form>
                         </td>
                     </tr>

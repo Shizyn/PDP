@@ -71,7 +71,6 @@ namespace DP.Controllers
         {
             if (ModelState.IsValid)
             {
-                //доб-ние пользователя в бд
                 var user = new User
                 {
                     FullName = model.FullName,

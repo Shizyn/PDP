@@ -27,6 +27,10 @@ namespace DP.Controllers
         }
         public IActionResult Index()
         {
+            if (HttpContext.Session.GetString("IsAdmin") != "true")
+            {
+                return RedirectToAction("Login");
+            }
             var bookings = _context.Bookings
                 .Include(b => b.ProfProba)
                 .ToList();
@@ -149,24 +153,24 @@ namespace DP.Controllers
         }
 
         // Метод для удаления окончательной заявки
-        [HttpPost]
-        public IActionResult DeleteFinalBooking(int id)
-        {
-            var booking = _context.Bookings.Include(b => b.Files).FirstOrDefault(b => b.ID == id);
-            if (booking != null)
-            {
-                // Удаляем все связанные файлы
-                if (booking.Files != null && booking.Files.Any())
-                {
-                    _context.UploadedFiles.RemoveRange(booking.Files);
-                }
+        //[HttpPost]
+        //public IActionResult DeleteFinalBooking(int id)
+        //{
+        //    var booking = _context.Bookings.Include(b => b.Files).FirstOrDefault(b => b.ID == id);
+        //    if (booking != null)
+        //    {
+        //        Удаляем все связанные файлы
+        //        if (booking.Files != null && booking.Files.Any())
+        //        {
+        //            _context.UploadedFiles.RemoveRange(booking.Files);
+        //        }
 
-                // Удаляем саму заявку
-                _context.Bookings.Remove(booking);
-                _context.SaveChanges();
-            }
-            return RedirectToAction("Index");
-        }
+        //        Удаляем саму заявку
+        //        _context.Bookings.Remove(booking);
+        //        _context.SaveChanges();
+        //    }
+        //    return RedirectToAction("Index");
+        //}
 
         [HttpPost]
         public IActionResult Confirm(int id)
