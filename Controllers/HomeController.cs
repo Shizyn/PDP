@@ -30,7 +30,6 @@ namespace DP.Controllers
             }
             return View();
         }
-
         [HttpGet]
         public IActionResult Login()
         {
@@ -60,10 +59,13 @@ namespace DP.Controllers
             return View(model);
         }
 
+
+
         [HttpGet]
         public IActionResult RegIn()
         {
-            return View();
+            ModelState.Clear();
+            return View(new RegInModel());
         }
 
         [HttpPost]
@@ -82,10 +84,32 @@ namespace DP.Controllers
                 _context.Users.Add(user);
                 _context.SaveChanges();
 
+                // Если запрос через AJAX, возвращаем JSON для редиректа
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = true, redirectUrl = Url.Action("Login", "Home") });
+                }
                 return RedirectToAction("Login", "Home");
             }
+            else
+            {
+                // Собираем ошибки из ModelState
+                var errors = ModelState
+                    .Where(ms => ms.Value.Errors.Any())
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                    );
 
-            return View(model);
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    // Возвращаем JSON с ошибками – при этом данные формы не очищаются
+                    return Json(new { success = false, errors });
+                }
+                // При обычной отправке возвращаем View с моделью, чтобы значения полей сохранились
+                return View(model);
+            }
         }
+
     }
 }

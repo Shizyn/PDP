@@ -1,212 +1,301 @@
-﻿<head>
+﻿@model DP.Models.RegInModel
+@{
+    ViewData["Title"] = "Регистрация";
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+
+    <!-- Подключаем jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7-beta.19/jquery.inputmask.min.js"></script>
+    <!-- Подключаем Inputmask -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7/jquery.inputmask.min.js"></script>
+    <!-- Подключаем jQuery Validate -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
+    <!-- Подключаем дополнительные методы, где реализовано правило pattern -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/additional-methods.min.js"></script>
+
+
+    <style>
+        /* Базовые стили и фон */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background: linear-gradient(to left, #005baa, #ffffff, #d52b1e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Фиксированный header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 22px;
+            background-color: #fff;
+            border-bottom: 1px solid #ddd;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 100;
+        }
+
+            header .logo {
+                font-size: 26px;
+                font-weight: bold;
+                color: black;
+                margin-left: 20px;
+            }
+
+            header nav {
+                display: flex;
+                align-items: center;
+                margin-right: 20px;
+                flex-wrap: wrap;
+            }
+
+                header nav a {
+                    margin-left: 20px;
+                    text-decoration: none;
+                    color: #333;
+                    font-size: 16px;
+                    padding: 10px 15px;
+                    border-radius: 25px;
+                    box-sizing: border-box;
+                    transition: all 0.3s;
+                    margin-right: 10px;
+                }
+
+                    header nav a:hover {
+                        background-color: #ddd;
+                    }
+
+        /* Центрируем окно регистрации (учитаем фиксированный header) */
+        .main-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: calc(100vh - 80px);
+            padding-top: 80px; /* отступ с учётом header */
+            box-sizing: border-box;
+        }
+
+        /* Оформление окна регистрации */
+        .registration-container {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            border-top: 5px solid #0056b3;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .registration-form {
+            margin-top: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 16px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+            .form-input:focus {
+                border-color: #0056b3;
+                box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
+            }
+
+        .field-error {
+            color: #d52b1e;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .btn-submit {
+            background-color: #d52b1e;
+            color: white;
+            padding: 14px;
+            width: 100%;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+            border: none;
+            transition: all 0.3s;
+            box-sizing: border-box;
+        }
+
+            .btn-submit:hover {
+                background-color: #b82217;
+            }
+
+        .alert {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: left;
+            border: 1px solid #f5c6cb;
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
 </head>
+<body>
+    <div class="registration-container">
+        <h1>Зарегистрироваться</h1>
+        <p>Уже есть аккаунт? <a href="@Url.Action("Login", "Home")" class="login-link">Войти</a></p>
+        <form id="regForm" asp-action="RegIn" method="post" class="registration-form">
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label for="FullName" class="form-label">ФИО</label>
+                <input type="text" name="FullName" id="FullName" class="form-input" placeholder="Введите ваше ФИО" />
+                <label id="FullName-error" class="field-error" for="FullName" style="display:none;"></label>
+            </div>
+            <div class="form-group">
+                <label for="Phone" class="form-label">Телефон</label>
+                <input type="text" name="Phone" id="Phone" class="form-input" placeholder="8(XXX)-XXX-XX-XX" />
+                <label id="Phone-error" class="field-error" for="Phone" style="display:none;"></label>
+            </div>
+            <div class="form-group">
+                <label for="Email" class="form-label">Email</label>
+                <input type="email" name="Email" id="Email" class="form-input" placeholder="Введите ваш email" />
+                <label id="Email-error" class="field-error" for="Email" style="display:none;"></label>
+            </div>
+            <div class="form-group">
+                <label for="Password" class="form-label">Пароль</label>
+                <input type="password" name="Password" id="Password" class="form-input" placeholder="Введите пароль" />
+                <label id="Password-error" class="field-error" for="Password" style="display:none;"></label>
+            </div>
+            <button type="submit" class="btn-submit">Зарегистрироваться</button>
+        </form>
+        <div id="result" class="alert" style="display:none;"></div>
+    </div>
 
-<div class="registration-container">
-    <h1>Зарегистрироваться</h1>
-    <p>Уже есть аккаунт? <a href="@Url.Action("Login","Home")" class="login-link">Войти</a></p>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // Привязываем маску для номера телефона
+            $("#Phone").inputmask("8(999)-999-99-99");
 
-    
+            // Ограничиваем ввод цифр в ФИО
+            $("#FullName")
+                .on("keypress", function (e) {
+                    if (e.which >= 48 && e.which <= 57) {
+                        e.preventDefault();
+                    }
+                })
+                .on("input", function () {
+                    this.value = this.value.replace(/\d/g, '');
+                });
 
-    <form id="regForm" asp-action="RegIn" method="post" asp-antiforgery="true" class="registration-form">
-        <div class="form-group">
-            <label asp-for="FullName" class="form-label"></label>
-            <input asp-for="FullName" class="form-input" name="FullName" placeholder="Введите ваше ФИО" />
-            <span asp-validation-for="FullName" class="validation-error text-danger"></span>
-        </div>
-        <script type="text/javascript">
-            $(document).ready(function () {
-                $("#Phone").inputmask("8(999)-999-99-99");
+            // Инициализируем jQuery Validate с кастомными правилами
+            $("#regForm").validate({
+                rules: {
+                    FullName: {
+                        required: true
+                    },
+                    Phone: {
+                        required: true,
+                        pattern: /^8\(\d{3}\)-\d{3}-\d{2}-\d{2}$/
+                    },
+                    Email: {
+                        required: true,
+                        email: true
+                    },
+                    Password: {
+                        required: true
+                    }
+                },
+                messages: {
+                    FullName: {
+                        required: "ФИО обязательно для заполнения"
+                    },
+                    Phone: {
+                        required: "Телефон обязателен для заполнения",
+                        pattern: "Телефон должен быть в формате 8(XXX)-XXX-XX-XX"
+                    },
+                    Email: {
+                        required: "Email обязателен для заполнения",
+                        email: "Введите корректный email"
+                    },
+                    Password: {
+                        required: "Пароль обязателен для заполнения"
+                    }
+                },
+                errorPlacement: function (error, element) {
+                    var errorId = element.attr("id") + "-error";
+                    $("#" + errorId).text(error.text()).show();
+                },
+                success: function (label, element) {
+                    var errorId = $(element).attr("id") + "-error";
+                    $("#" + errorId).hide();
+                }
             });
-        </script>
 
-        <div class="form-group">
-            <label asp-for="Phone" class="form-label"></label>
-            <input asp-for="Phone" id="Phone" class="form-input" name="Phone" placeholder="8(XXX)-XXX-XX-XX" />
-            <span asp-validation-for="Phone" class="validation-error text-danger"></span>
-        </div>
+            // Обработка отправки формы через AJAX
+            $("#regForm").on("submit", function (e) {
+                e.preventDefault(); // предотвращаем стандартную отправку
+                $("#result").hide().empty();
 
-        <div class="form-group">
-            <label asp-for="Email" class="form-label"></label>
-            <input asp-for="Email" class="form-input" name="Email" placeholder="Введите ваш email" />
-            <span asp-validation-for="Email" class="validation-error text-danger"></span>
-        </div>
+                // Если форма не проходит клиентскую валидацию, ошибки выводятся, данные остаются
+                if (!$(this).valid()) {
+                    return;
+                }
 
-        <div class="form-group">
-            <label asp-for="Password" class="form-label"></label>
-            <input asp-for="Password" type="password" class="form-input" name="Password" placeholder="Введите пароль" />
-            <span asp-validation-for="Password" class="validation-error text-danger"></span>
-        </div>
-        <button type="submit" class="btn-submit">Зарегистрироваться</button>
-    </form>
-</div>
-
-
-        <script type="text/javascript">
-            $(document).ready(function () {
-                $("#Phone").inputmask("8(999)-999-99-99");
-
-                // Запрет на ввод цифр в поле ФИО
-                $("#FullName").on("input", function () {
-                    this.value = this.value.replace(/[0-9]/g, ''); // удаляет цифры
+                var formData = $(this).serialize();
+                $.ajax({
+                    type: "POST",
+                    url: $(this).attr("action"),
+                    data: formData,
+                    dataType: "json",
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    success: function (response) {
+                        if (response.success) {
+                            // При успешной регистрации перенаправляем пользователя,
+                            // при этом данные не сохраняются, поскольку выполняется редирект
+                            window.location.href = response.redirectUrl;
+                        } else {
+                            var errorHtml = "";
+                            $.each(response.errors, function (field, errors) {
+                                $.each(errors, function (i, errorMsg) {
+                                    errorHtml += "<p>" + errorMsg + "</p>";
+                                });
+                            });
+                            $("#result").html(errorHtml).show();
+                        }
+                    },
+                    error: function () {
+                        $("#result").html("<p>Ошибка при отправке данных. Попробуйте позже.</p>").show();
+                    }
                 });
             });
-        </script>
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    
-
-@if (!ViewData.ModelState.IsValid)
-{
-    <div class="alert alert-danger">
-        <ul>
-            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-            {
-                <li>@error.ErrorMessage</li>
-            }
-        </ul>
-    </div>
-}
-
-<style>
-    body {
-        font-family: 'Arial', sans-serif;
-        background-color: #f0f6fc;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        margin: 0;
-        padding: 20px;
-        background-repeat: no-repeat;
-        background-size: cover;
-        background-position: center;
-    }
-
-    .registration-container {
-        background-color: rgba(255, 255, 255, 0.95);
-        padding: 40px;
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-        width: 100%;
-        max-width: 450px;
-        text-align: center;
-        border-top: 5px solid #0056b3;
-    }
-
-    h1 {
-        font-size: 28px;
-        margin-bottom: 5px;
-        color: #0056b3;
-        font-weight: 600;
-    }
-
-    h2 {
-        font-size: 24px;
-        margin-bottom: 20px;
-        color: #333;
-        font-weight: 500;
-    }
-
-    .login-link {
-        color: #d52b1e;
-        text-decoration: none;
-        font-weight: 500;
-        transition: color 0.2s;
-    }
-
-        .login-link:hover {
-            color: #0056b3;
-            text-decoration: underline;
-        }
-
-    .registration-form {
-        margin-top: 25px;
-    }
-
-    .form-group {
-        margin-bottom: 20px;
-        text-align: left;
-    }
-
-    .form-label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 500;
-        color: #333;
-    }
-
-    .form-input {
-        width: 100%;
-        padding: 12px 15px;
-        font-size: 16px;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        transition: border-color 0.3s;
-    }
-
-        .form-input:focus {
-            border-color: #0056b3;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(0, 86, 179, 0.1);
-        }
-
-    .validation-error {
-        color: #d52b1e;
-        font-size: 14px;
-        margin-top: 5px;
-        display: block;
-    }
-
-    .btn-submit {
-        background-color: #d52b1e;
-        color: white;
-        border: none;
-        padding: 14px;
-        font-size: 16px;
-        border-radius: 4px;
-        cursor: pointer;
-        width: 100%;
-        font-weight: 600;
-        transition: background-color 0.3s;
-        margin-top: 10px;
-    }
-
-        .btn-submit:hover {
-            background-color: #b82217;
-        }
-
-    .alert-danger {
-        background-color: #f8d7da;
-        color: #721c24;
-        padding: 15px;
-        border-radius: 4px;
-        margin-bottom: 20px;
-        text-align: left;
-        border: 1px solid #f5c6cb;
-    }
-
-        .alert-danger ul {
-            margin: 0;
-            padding-left: 20px;
-        }
-
-        .alert-danger li {
-            margin-bottom: 5px;
-        }
-
-    @@media (max-width: 768px) {
-        .registration-container {
-            padding: 25px;
-            margin: 15px;
-        }
-
-        h1 {
-            font-size: 24px;
-        }
-
-        h2 {
-            font-size: 20px;
-        }
-    }
-</style>
+        });
+    </script>
+</body>
+</html>
