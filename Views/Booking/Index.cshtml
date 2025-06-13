@@ -29,6 +29,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed; 
             margin: 20px 0;
             background-color: #fff;
             border-radius: 8px;
@@ -39,11 +40,24 @@
 
         th, td {
             padding: 12px 15px;
+            width: auto;
             text-align: center;
             word-wrap: break-word;
             border: 1px solid #e0e0e0;
         }
 
+            th:nth-child(1), td:nth-child(1) {
+                min-width: 150px;
+            }
+            /* Профпроба/Музей */
+            th:nth-child(2), td:nth-child(2) {
+                min-width: 120px;
+            }
+            /* ФИО */
+            th:nth-child(9), td:nth-child(9) {
+                min-width: 150px;
+            }
+        /* Файлы */
         th {
             background-color: #0056b3;
             color: white;
@@ -202,9 +216,9 @@
                     {
                         <tr style="@(booking.Status == "Новое" ? "background-color:#f2f2f2;" : booking.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : booking.Status == "Отклонено" ? "background-color:#ffa5a557;" : "")">
                             <td>@booking.ProfProba?.Name</td>
-                            <td>@booking.FullName</td>
-                            <td>@booking.Email</td>
-                            <td>@booking.PhoneNumber</td>
+                            <td>@booking.User?.FullName</td>
+                            <td>@booking.User?.Email</td>
+                            <td>@booking.User?.Phone</td>
                             <td>@booking.SchoolName</td>
                             <td>@booking.PeopleCount</td>
                             <td>@booking.BookingDate.ToString("dd.MM.yyyy")</td>
@@ -241,10 +255,11 @@
             <table>
                 <thead>
                     <tr>
+                        <th>Музей</th>
                         <th>ФИО</th>
                         <th>Email</th>
                         <th>Телефон</th>
-                        <th>Школа</th>
+                        <th>Учебное заведение</th>
                         <th>Кол-во чел</th>
                         <th>Дата</th>
                         <th>Время</th>
@@ -256,9 +271,10 @@
                     @foreach (var excursion in ViewBag.Excursions as List<DP.Models.ExcursionBooking>)
                     {
                         <tr style="@(excursion.Status == "Новое" ? "background-color:#f2f2f2;" : excursion.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : excursion.Status == "Отклонено" ? "background-color:#ffa5a557;" : "")">
-                            <td>@excursion.FullName</td>
-                            <td>@excursion.Email</td>
-                            <td>@excursion.PhoneNumber</td>
+                            <td>@excursion.Museum?.Name</td>
+                            <td>@excursion.User?.FullName</td>
+                            <td>@excursion.User?.Email</td>
+                            <td>@excursion.User?.Phone</td>
                             <td>@excursion.SchoolName</td>
                             <td>@excursion.PeopleCount</td>
                             <td>@excursion.BookingDate.ToShortDateString()</td>

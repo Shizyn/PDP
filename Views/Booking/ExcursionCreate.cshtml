@@ -151,7 +151,7 @@
         <form id="bookingForm" method="post" enctype="multipart/form-data" class="form-container">
             <input type="hidden" name="eventType" value="@ViewBag.EventType" />
 
-            <div class="form-group">
+            @* <div class="form-group">
                 <label for="fullName">ФИО заявителя:</label>
                 <input type="text" id="fullName" name="fullName" required placeholder="Введите ваше ФИО" />
             </div>
@@ -165,7 +165,14 @@
                 <label for="phone">Телефон:</label>
                 <input type="tel" id="phone" name="phoneNumber" required placeholder="8(XXX)-XXX-XX-XX" />
                 <span id="phoneError" class="validation-error text-danger" style="display:none;font-size:13px;margin-top:5px;"></span>
-            </div>
+            </div> *@
+            <select id="museumSelect" name="MuseumId" required>
+                <option value="">Выберите музей</option>
+                @foreach (var museum in ViewBag.Museums)
+                {
+                    <option value="@museum.Id">@museum.Name</option>
+                }
+            </select>
 
             <div class="form-group">
                 <label for="schoolName">Учебное заведение:</label>
@@ -179,13 +186,13 @@
 
             <div class="form-group">
                 <label for="BookingDate">Дата посещения:</label>
-                <input type="text" id="BookingDate" name="BookingDate" required autocomplete="off" readonly />
+                <input type="text" id="excursionBookingDate" name="bookingDate" placeholder="Выберите дату" readonly disabled />
             </div>
 
             <div class="form-group">
                 <label for="TimeRange">Время начала:</label>
-                <select id="TimeRange" name="TimeRange" required>
-                    <option value="">-- Выберите время начала --</option>
+                <select id="excursionTimeRange" name="timeRange" required disabled>
+                    <option value="">Сначала выберите дату</option>
                 </select>
             </div>
 
@@ -214,89 +221,57 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7-beta.19/jquery.inputmask.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-    <script type="text/javascript">
-        $(function() {
-          // $("#phone").inputmask("9(999)-999-99-99");
 
-          $("#fullName")
-            .on("keypress", e => { if (e.which >= 48 && e.which <= 57) e.preventDefault(); })
-            .on("input",  function() { this.value = this.value.replace(/\d/g, ''); });
+    <script>
+        $(document).ready(function () {
+            let availableExcursionDates = [];
 
-          $("#email")
-            .on("keypress", e => { if (e.which === 32) e.preventDefault(); })
-            .on("input",  function() { this.value = this.value.replace(/\s/g, ''); });
-
-            $("#phone")
-        .on("keypress", e => {
-          const ch = String.fromCharCode(e.which);
-          if (!/[0-9()+\-]/.test(ch)) e.preventDefault();
-        })
-        .on("input", function() {
-          this.value = this.value.replace(/[^0-9()+\-]/g, '');
-        });
-                // Загрузка доступных дат
-                $.ajax({
-                    url: '/Booking/GetAvailableDates',
-                    type: 'GET',
-                    success: function (dates) {
-                        availableDates = dates;
-                        initializeDatepicker();
-                    },
-                    error: function () {
-                        alert('Не удалось загрузить доступные даты.');
-                    }
+            // Загружаем список музеев
+            $.getJSON("/Booking/GetMuseums", function (museums) {
+                museums.forEach(museum => {
+                    $("#museumSelect").append(`<option value="${museum.Id}">${museum.Name}</option>`);
                 });
-
-                function initializeDatepicker() {
-                    $("#BookingDate").datepicker({
-                        dateFormat: "yy-mm-dd",
-                        changeMonth: true,
-                        changeYear: false,
-                        beforeShowDay: function (date) {
-                            const formatted = $.datepicker.formatDate("yy-mm-dd", date);
-                            const isAvailable = availableDates.includes(formatted);
-                            return [isAvailable, "", isAvailable ? "Доступно" : "Недоступно"];
-                        },
-                        onSelect: function (selectedDate) {
-                            loadAvailableTimes(selectedDate);
-                        }
-                    });
-                }
-
-                function loadAvailableTimes(selectedDate) {
-                    $("#TimeRange").empty().append(
-                        $('<option>', { value: "", text: "-- Выберите время --" })
-                    );
-
-                    $.ajax({
-                        url: '/Booking/GetAvailableTimes',
-                        type: 'GET',
-                        data: { eventId: 0, date: selectedDate }, // eventId не используется, можно передать 0
-                        success: function (times) {
-                            if (times && times.length > 0) {
-                                $.each(times, function (index, time) {
-                                    $("#TimeRange").append($('<option>', {
-                                        value: time,
-                                        text: time
-                                    }));
-                                });
-                            } else {
-                                $("#TimeRange").append($('<option>', {
-                                    value: "",
-                                    text: "Нет доступных времён"
-                                }));
-                            }
-                        },
-                        error: function () {
-                            alert('Не удалось загрузить доступные временные интервалы.');
-                        }
-                    });
-                }
-
-                // Маска для телефона
-                $("#phone").inputmask("8(999)-999-99-99");
             });
-        </script>
+
+            // При выборе музея загружаем доступные даты экскурсий
+            $("#museumSelect").on("change", function () {
+                const museumId = $(this).val();
+                $("#excursionBookingDate").val("").prop("disabled", true);
+                $("#excursionTimeRange").empty().append('<option value="">Сначала выберите дату</option>').prop("disabled", true);
+
+                if (!museumId) return;
+
+                $.getJSON("/Booking/GetAvailableExcursionDates", { museumId }, function (dates) {
+                    availableExcursionDates = dates.map(dateStr => $.datepicker.formatDate("yy-mm-dd", new Date(dateStr)));
+
+                    $("#excursionBookingDate").prop("disabled", false).datepicker({
+                        dateFormat: "yy-mm-dd",
+                        minDate: 0,
+                        maxDate: "+1m",
+                        beforeShowDay: date => [availableExcursionDates.includes($.datepicker.formatDate("yy-mm-dd", date))],
+                        onSelect: function (dateText) {
+                            loadAvailableExcursionTimes(museumId, dateText);
+                        }
+                    }).attr("readonly", true);
+                });
+            });
+
+            // При выборе даты загружаем доступные временные слоты
+            function loadAvailableExcursionTimes(museumId, selectedDate) {
+                $("#excursionTimeRange").empty().append('<option value="">Загрузка...</option>').prop("disabled", true);
+
+                $.getJSON("/Booking/GetAvailableExcursionTimes", { museumId, date: selectedDate }, function (timeRanges) {
+                    $("#excursionTimeRange").empty().append('<option value="">Выберите время</option>');
+
+                    timeRanges.length === 0
+                        ? $("#excursionTimeRange").append('<option value="">Нет доступных времён</option>')
+                        : timeRanges.forEach(range => $("#excursionTimeRange").append(`<option value="${range}">${range}</option>`));
+
+                    $("#excursionTimeRange").prop("disabled", false);
+                });
+            }
+        });
+    </script>
 
 
         @if (!ViewData.ModelState.IsValid)

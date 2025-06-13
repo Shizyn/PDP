@@ -45,13 +45,16 @@ namespace DP.Controllers
             var bookings = _context.Bookings
                 .Where(b => b.UserId == user.UserId)
                 .Include(b => b.ProfProba)
-                .Include(b => b.Files) 
+                .Include(b => b.Files)
+                .Include(b => b.User)
                 .ToList();
             ViewBag.Bookings = bookings;
            
             var excursionBookings = _context.ExcursionBookings
             .Where(e => e.UserId == user.UserId)
-            .Include(e => e.Files) 
+            .Include(e => e.Museum)
+            .Include(e => e.Files)
+            .Include(b => b.User)
             .ToList();
             ViewBag.Excursions = excursionBookings;
 
@@ -81,63 +84,48 @@ namespace DP.Controllers
                 description = ev.Description,
             });
         }
-        
+
         [HttpGet]
         public JsonResult GetAvailableDates(int profProbaId)
         {
-            var today = DateTime.Today;
-            var availableDates = Enumerable.Range(0, 14)
-                                           .Select(offset => today.AddDays(offset).ToString("yyyy-MM-dd"))
-                                           .ToList();
-            return Json(availableDates);
+            var availableDates = _context.AvailableSlots
+                .Where(s => s.ProfProbaId == profProbaId)
+                .Select(s => s.SlotDate)
+                .Distinct()
+                .OrderBy(d => d)
+                .ToList();
+
+            var formattedDates = availableDates.Select(d => d.ToString("yyyy-MM-dd")).ToList();
+
+            return Json(formattedDates);
         }
         [HttpGet]
-        public JsonResult GetAvailableTimes(int eventId, DateTime date)
+        public JsonResult GetAvailableTimes(int profProbaId, DateTime date)
         {
-            var maxBookings = 3;
+            var slots = _context.AvailableSlots
+                .Where(s => s.ProfProbaId == profProbaId && s.SlotDate == date.Date)
+                .Select(s => s.TimeRange)
+                .ToList();
 
-            var totalBookings = _context.Bookings.Count(b => b.BookingDate.Date == date.Date) +
-                                _context.ExcursionBookings.Count(e => e.BookingDate.Date == date.Date);
-
-            if (totalBookings >= maxBookings)
-            {
-                return Json(new List<string>()); // Нет доступных слотов
-            }
-
-            var bookedTimes = _context.Bookings
-                .Where(b => b.BookingDate.Date == date.Date)
+            // Получаем уже занятые слоты
+            var busyTimes = _context.Bookings
+                .Where(b => b.BookingDate == date && b.ProfProbaId == profProbaId)
                 .Select(b => b.TimeRange)
                 .ToList();
 
-            var excursionTimes = _context.ExcursionBookings
-                .Where(e => e.BookingDate.Date == date.Date)
-                .Select(e => e.TimeRange)
-                .ToList();
+            var availableTimes = slots.Except(busyTimes).ToList();
 
-            var allBooked = bookedTimes.Concat(excursionTimes).ToList();
-
-            var allSlots = new List<string>
-            {
-                "10:00-11:00",
-                "11:00-12:00",
-                "12:00-13:00",
-                "13:00-14:00",
-                "14:00-15:00",
-                "15:00-16:00"
-            };
-
-            var available = allSlots.Except(allBooked).ToList();
-            return Json(available);
+            return Json(availableTimes);
         }
 
         [HttpGet]
         public IActionResult ExcursionCreate()
         {
+            ViewBag.Museums = _context.Museums.ToList(); 
             return View("ExcursionCreate");
         }
-
         [HttpPost]
-        public async Task<IActionResult> ExcursionCreate(string fullName, string email, string phoneNumber, string schoolName, DateTime bookingDate, string timeRange, int peopleCount, IFormFile excelFile)
+        public async Task<IActionResult> ExcursionCreate(int museumId, string schoolName, DateTime bookingDate, string timeRange, int peopleCount, IFormFile excelFile)
         {
             var userEmail = HttpContext.Session.GetString("UserEmail");
             var user = _context.Users.FirstOrDefault(u => u.Email == userEmail);
@@ -146,47 +134,51 @@ namespace DP.Controllers
                 return RedirectToAction("Login", "Home");
             }
 
-
-            int excursionCount = _context.ExcursionBookings
-    .Count(e => e.BookingDate.Date == bookingDate.Date && e.TimeRange == timeRange);
-
-            int profprobCount = _context.Bookings
-                .Count(p => p.BookingDate.Date == bookingDate.Date && p.TimeRange == timeRange);
-
-            int totalEvents = excursionCount + profprobCount;
-
-            if (totalEvents >= 3)
-            {
-                ModelState.AddModelError("", "На выбранную дату и время уже запланировано максимальное количество мероприятий (3). Пожалуйста, выберите другой слот.");
-                return View("ExcursionCreate");
-            }
-
-            // Проверяем занятость: если уже есть запись на эту дату и время
-            var isSlotTaken = _context.ExcursionBookings.Any(e =>
-                e.BookingDate.Date == bookingDate.Date &&
-                e.TimeRange == timeRange);
-
-            if (isSlotTaken)
-            {
-                ModelState.AddModelError("", "На выбранную дату и время уже есть заявка. Пожалуйста, выберите другой слот.");
-                return View("ExcursionCreate");
-            }
-
-            var excursion = new ExcursionBooking
-            {
-                FullName = fullName,
-                Email = email,
-                PhoneNumber = phoneNumber,
-                SchoolName = schoolName,
-                BookingDate = bookingDate,
-                TimeRange = timeRange,
-                PeopleCount = peopleCount,
-                Status = "Новое",
-                UserId = user.UserId
-            };
             try
             {
-                _context.ExcursionBookings.Add(excursion);
+                if (string.IsNullOrWhiteSpace(schoolName) || string.IsNullOrWhiteSpace(timeRange) || museumId == 0 || bookingDate == default)
+                {
+                    ModelState.AddModelError("", "Все поля обязательны.");
+                    ViewBag.Museums = _context.Museums.ToList();
+                    return View("ExcursionCreate");
+                }
+
+                int totalEvents = _context.ExcursionBookings
+                    .Count(e => e.BookingDate.Date == bookingDate.Date && e.TimeRange == timeRange)
+                    + _context.Bookings
+                    .Count(p => p.BookingDate.Date == bookingDate.Date && p.TimeRange == timeRange);
+
+                if (totalEvents >= 3)
+                {
+                    ModelState.AddModelError("", "На выбранную дату и время уже запланировано максимальное количество мероприятий (3). Пожалуйста, выберите другой слот.");
+                    ViewBag.Museums = _context.Museums.ToList();
+                    return View("ExcursionCreate");
+                }
+
+                var isSlotTaken = _context.ExcursionBookings.Any(e =>
+                    e.MuseumId == museumId &&
+                    e.BookingDate.Date == bookingDate.Date &&
+                    e.TimeRange == timeRange);
+
+                if (isSlotTaken)
+                {
+                    ModelState.AddModelError("", "На выбранную дату и время уже есть заявка. Пожалуйста, выберите другой слот.");
+                    ViewBag.Museums = _context.Museums.ToList();
+                    return View("ExcursionCreate");
+                }
+
+                var excursionBooking = new ExcursionBooking
+                {
+                    MuseumId = museumId,
+                    SchoolName = schoolName,
+                    BookingDate = bookingDate,
+                    TimeRange = timeRange,
+                    PeopleCount = peopleCount,
+                    Status = "Новое",
+                    UserId = user.UserId
+                };
+
+                _context.ExcursionBookings.Add(excursionBooking);
                 await _context.SaveChangesAsync();
 
                 if (excelFile != null && excelFile.Length > 0)
@@ -197,7 +189,7 @@ namespace DP.Controllers
 
                     var uploaded = new ExcursionUploadedFile
                     {
-                        ExcursionBookingId = excursion.Id,
+                        ExcursionBookingId = excursionBooking.Id,
                         FileName = excelFile.FileName,
                         FileType = "Excel",
                         Content = bytes
@@ -207,76 +199,47 @@ namespace DP.Controllers
                     await _context.SaveChangesAsync();
                 }
 
-                return RedirectToAction("Index", "Booking");
+                return RedirectToAction("Index");
             }
-            catch (DbUpdateException dbEx)
+            catch (DbUpdateException ex)
             {
-                _logger.LogError(dbEx, "Ошибка при сохранении ExcursionBooking или ExcursionUploadedFile");
-                var detailed = dbEx.InnerException?.Message ?? dbEx.Message;
-                ModelState.AddModelError("", $"Ошибка при сохранении в БД: {detailed}");
-
-                return View("ExcursionCreate");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Непредвиденная ошибка в методе ExcursionCreate");
-                ModelState.AddModelError("", $"Непредвиденная ошибка: {ex.Message}");
+                _logger.LogError(ex, $"Ошибка при сохранении новой экскурсионной заявки: {ex.InnerException?.Message ?? ex.Message}");
+                ModelState.AddModelError("", $"Ошибка при сохранении в БД: {ex.InnerException?.Message ?? ex.Message}");
+                ViewBag.Museums = _context.Museums.ToList();
                 return View("ExcursionCreate");
             }
         }
+
         [HttpGet]
-        public IActionResult GetAvailableExcursionDates()
+        public IActionResult GetAvailableExcursionDates(int museumId)
         {
-            var allDates = _context.ExcursionBookings
-                .Select(d => d.BookingDate)
+            var dates = _context.ExcursionSlots
+                .Where(s => s.MuseumId == museumId)
+                .Select(s => s.SlotDate)
                 .Distinct()
+                .OrderBy(d => d)
                 .ToList();
 
-            var availableDates = new List<string>();
-
-            foreach (var date in allDates)
-            {
-                int excursionCount = _context.ExcursionBookings.Count(e => e.BookingDate == date);
-                int profprobCount = _context.Bookings.Count(p => p.BookingDate == date);
-
-                if ((excursionCount + profprobCount) < 3)
-                {
-                    availableDates.Add(date.ToString("yyyy-MM-dd"));
-                }
-            }
-
-            return Json(availableDates);
+            return Json(dates.Select(d => d.ToString("yyyy-MM-dd")).ToList());
         }
 
         [HttpGet]
-        public IActionResult GetAvailableExcursionTimes(string date)
+        public IActionResult GetAvailableExcursionTimes(int museumId, string date)
         {
             if (!DateTime.TryParse(date, out var selectedDate))
                 return BadRequest();
 
-            var allTimeSlots = new List<string>
-    {
-        "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"
-    };
-
-            // Уже занятые интервалы на эту дату (экскурсии и профпробы)
-            var busyTimes = _context.ExcursionBookings
-                .Where(e => e.BookingDate == selectedDate)
-                .Select(e => e.TimeRange)
+            var times = _context.ExcursionSlots
+                .Where(s => s.MuseumId == museumId && s.SlotDate == selectedDate)
+                .Select(s => s.TimeRange)
                 .ToList();
 
-            busyTimes.AddRange(_context.Bookings
-                .Where(p => p.BookingDate == selectedDate)
-                .Select(p => p.TimeRange));
+            var busyTimes = _context.ExcursionBookings
+                .Where(b => b.BookingDate == selectedDate)
+                .Select(b => b.TimeRange)
+                .ToList();
 
-            var grouped = busyTimes.GroupBy(t => t).ToDictionary(g => g.Key, g => g.Count());
-
-            var availableTimes = allTimeSlots.Where(t =>
-            {
-                return !grouped.ContainsKey(t) || grouped[t] < 3;
-            }).ToList();
-
-            return Json(availableTimes);
+            return Json(times.Except(busyTimes).ToList());
         }
         [HttpGet]
         public IActionResult DownloadExcursionFile(int id)
@@ -314,7 +277,7 @@ namespace DP.Controllers
             return File(file.Content, System.Net.Mime.MediaTypeNames.Application.Octet, file.FileName);
         }
         [HttpPost]
-        public async Task<IActionResult> Create(int profProbaId, string fullName, string email, string phoneNumber, string schoolName, DateTime bookingDate, string timeRange, int peopleCount, IFormFile excelFile)
+        public async Task<IActionResult> Create(int profProbaId, string schoolName, DateTime bookingDate, string timeRange, int peopleCount, IFormFile excelFile)
         {
             var userEmail = HttpContext.Session.GetString("UserEmail");
             var user = _context.Users.FirstOrDefault(u => u.Email == userEmail);
@@ -322,13 +285,13 @@ namespace DP.Controllers
             {
                 return RedirectToAction("Login", "Home");
             }
+
             try
             {
-                if (string.IsNullOrWhiteSpace(fullName) ||
-                string.IsNullOrWhiteSpace(email) ||
-                string.IsNullOrWhiteSpace(phoneNumber) ||
-                string.IsNullOrWhiteSpace(schoolName) ||
-                string.IsNullOrWhiteSpace(timeRange))
+                if (string.IsNullOrWhiteSpace(schoolName) ||
+                    string.IsNullOrWhiteSpace(timeRange) ||
+                    profProbaId == 0 ||
+                    bookingDate == default)
                 {
                     ModelState.AddModelError("", "Все поля обязательны.");
                     ViewBag.ProfProby = _context.ProfProby.ToList();
@@ -336,7 +299,7 @@ namespace DP.Controllers
                     return View();
                 }
 
-                // Проверяем наличие занятого слота
+                // Проверка, занят ли слот
                 var isSlotTaken = _context.Bookings.Any(b =>
                     b.ProfProbaId == profProbaId &&
                     b.BookingDate.Date == bookingDate.Date &&
@@ -346,65 +309,56 @@ namespace DP.Controllers
                 {
                     ModelState.AddModelError("", "На выбранную дату и время уже есть заявка. Пожалуйста, выберите другой слот.");
                     ViewBag.ProfProby = _context.ProfProby.ToList();
+                    ViewBag.Events = _context.Events.ToList();
                     return View();
                 }
+
                 var booking = new Booking
                 {
                     ProfProbaId = profProbaId,
-                    FullName = fullName,
-                    //BirthDate = birthDate,
-                    Email = email,
-                    PhoneNumber = phoneNumber,
                     SchoolName = schoolName,
                     BookingDate = bookingDate,
                     TimeRange = timeRange,
                     PeopleCount = peopleCount,
                     Status = "Новое",
                     UserId = user.UserId
-
                 };
 
-                try
-                {
-                    _context.Bookings.Add(booking);
-                    await _context.SaveChangesAsync();
+                _context.Bookings.Add(booking);
+                await _context.SaveChangesAsync();
 
-                    if (excelFile != null && excelFile.Length > 0)
+                // Сохраняем файл Excel
+                if (excelFile != null && excelFile.Length > 0)
+                {
+                    using var ms = new MemoryStream();
+                    await excelFile.CopyToAsync(ms);
+                    var bytes = ms.ToArray();
+
+                    var uploaded = new UploadedFile
                     {
-                        using var ms = new MemoryStream();
-                        await excelFile.CopyToAsync(ms);
-                        var bytes = ms.ToArray();
+                        BookingId = booking.ID,
+                        FileName = excelFile.FileName,
+                        FileType = "Excel",
+                        Content = bytes
+                    };
 
-                        var uploaded = new UploadedFile
-                        {
-                            BookingId = booking.ID, 
-                            FileName = excelFile.FileName,
-                            FileType = "Excel",
-                            Content = bytes
-                        };
-
-                        _context.UploadedFiles.Add(uploaded);
-                        await _context.SaveChangesAsync();
-                    }
-
-                    return RedirectToAction("Index");
+                    _context.UploadedFiles.Add(uploaded);
+                    await _context.SaveChangesAsync();
                 }
-                catch (DbUpdateException ex)
-                {
-                    _logger.LogError(ex, "Ошибка при сохранении новой заявки");
-                    ModelState.AddModelError("", "Произошла ошибка при сохранении заявки. Пожалуйста, попробуйте снова.");
-                    ViewBag.ProfProby = _context.ProfProby.ToList();
-                    return View();
-                }
+
+                return RedirectToAction("Index");
             }
             catch (DbUpdateException ex)
             {
-                _logger.LogError(ex, "Ошибка при сохранении новой заявки");
-                ModelState.AddModelError("", "Произошла ошибка при сохранении заявки. Пожалуйста, попробуйте снова");
+                var detailed = ex.InnerException?.Message ?? ex.Message;
+                _logger.LogError(ex, "Ошибка при сохранении новой заявки: " + detailed);
+                ModelState.AddModelError("", $"Ошибка при сохранении в БД: {detailed}");
                 ViewBag.ProfProby = _context.ProfProby.ToList();
+                ViewBag.Events = _context.Events.ToList();
                 return View();
             }
         }
+
 
         [HttpGet]
         public IActionResult DownloadExcelTemplate()

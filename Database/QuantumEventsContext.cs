@@ -17,6 +17,8 @@ namespace DP.Database
         public DbSet<ExcursionSlot> ExcursionSlots { get; set; }
         public DbSet<ExcursionUploadedFile> ExcursionUploadedFiles { get; set; }
         public DbSet<UploadedFile> UploadedFiles { get; set; }
+        public DbSet<Museum> Museums { get; set; }  
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<ProfProba>().ToTable("ProfProby");

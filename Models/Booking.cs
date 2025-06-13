@@ -15,16 +15,16 @@ namespace DP.Models
         public int ProfProbaId { get; set; }
         public ProfProba ProfProba { get; set; }
 
-        [Required]
-        public string FullName { get; set; }
+        //[Required]
+        //public string FullName { get; set; }
 
-        [Required]
-        [EmailAddress(ErrorMessage = "Некорректный Email")]
-        public string Email { get; set; }
+        //[Required]
+        //[EmailAddress(ErrorMessage = "Некорректный Email")]
+        //public string Email { get; set; }
 
-        [Required]
-        [RegularExpression(@"^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$")]
-        public string PhoneNumber { get; set; }
+        //[Required]
+        //[RegularExpression(@"^\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}$")]
+        //public string PhoneNumber { get; set; }
 
         [Required]
         public string SchoolName { get; set; }
@@ -41,6 +41,7 @@ namespace DP.Models
 
         [Required]
         public int UserId { get; set; }
+        public User User { get; set; }
 
         [Required]
         [Range(1, 30, ErrorMessage = "Количество человек должно быть от 1 до 30")]

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using DP.Models;
 
 namespace DP.Models
 {
@@ -8,16 +9,16 @@ namespace DP.Models
         [Key]
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "ФИО обязательно")]
-        public string FullName { get; set; }
+        //[Required(ErrorMessage = "ФИО обязательно")]
+        //public string FullName { get; set; }
 
-        [Required(ErrorMessage = "Email обязателен")]
-        [EmailAddress(ErrorMessage = "Некорректный Email")]
-        public string Email { get; set; }
+        //[Required(ErrorMessage = "Email обязателен")]
+        //[EmailAddress(ErrorMessage = "Некорректный Email")]
+        //public string Email { get; set; }
 
-        [Required(ErrorMessage = "Телефон обязателен")]
+        //[Required(ErrorMessage = "Телефон обязателен")]
         
-        public string PhoneNumber { get; set; }
+        //public string PhoneNumber { get; set; }
 
         [Required(ErrorMessage = "Школа обязательна")]
         public string SchoolName { get; set; }
@@ -33,7 +34,9 @@ namespace DP.Models
         public int PeopleCount { get; set; } = 1;
 
         public string Status { get; set; } = "Новое";
-
+        public int MuseumId { get; set; }
+        [ForeignKey("MuseumId")]
+        public Museum Museum { get; set; }
         [Required]
         public int UserId { get; set; }
         [ForeignKey("UserId")]

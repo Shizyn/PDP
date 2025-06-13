@@ -33,6 +33,7 @@ namespace DP.Controllers
             }
             var bookings = _context.Bookings
                 .Include(b => b.ProfProba)
+
                 .ToList();
 
             var viewModel = new AdminDashboardViewModel
@@ -46,15 +47,23 @@ namespace DP.Controllers
 
         private List<Booking> GetBookings()
         {
-            return _context.Bookings.ToList();
+            return _context.Bookings
+                .Include(b => b.ProfProba)
+                .Include(b => b.User)       // добавляем пользователя
+                .Include(b => b.Files)      // добавляем файлы
+                .ToList();
         }
 
         private List<ExcursionBooking> GetExcursionBookings()
         {
-            return _context.ExcursionBookings.ToList();
+            return _context.ExcursionBookings
+                .Include(e => e.Museum)     // подключаем музей
+                .Include(e => e.User)       // подключаем пользователя
+                .Include(e => e.Files)      // подключаем файлы
+                .ToList();
         }
 
-        
+
 
         public IActionResult Excursions()
         {
@@ -272,9 +281,9 @@ namespace DP.Controllers
 
             // Обновляем только разрешенные поля
             booking.ProfProbaId = model.ProfProbaId;
-            booking.FullName = model.FullName;
-            booking.Email = model.Email;
-            booking.PhoneNumber = model.PhoneNumber;
+            //booking.FullName = model.FullName;
+            //booking.Email = model.Email;
+            //booking.PhoneNumber = model.PhoneNumber;
             booking.SchoolName = model.SchoolName;
             booking.BookingDate = model.BookingDate;
             booking.TimeRange = model.TimeRange;

@@ -252,9 +252,9 @@
                 {
                     <tr style="@(booking.Status == "Новое" ? "background-color:#f2f2f2;" : booking.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : booking.Status == "Отклонено" ? "background-color:#ffa5a557;" : "")">
                         <td>@booking.ProfProba?.Name</td>
-                        <td>@booking.FullName</td>
-                        <td>@booking.Email</td>
-                        <td>@booking.PhoneNumber</td>
+                        <td>@booking.User?.FullName</td>
+                        <td>@booking.User?.Email</td>
+                        <td>@booking.User?.Phone</td>
                         <td>@booking.SchoolName</td>
                         <td>@booking.PeopleCount</td>
                         <td>@booking.BookingDate.ToString("dd.MM.yyyy")</td>
@@ -318,9 +318,11 @@
         <table>
             <thead>
                 <tr>
+                    <th>Музей</th>
                     <th>ФИО</th>
                     <th>Email</th>
-                    <th>Учебное заведение</th>
+					<th>Телефон</th>
+					<th>Учебное заведение</th>
                     <th>Кол-во человек</th>
                     <th>Дата</th>
                     <th>Время</th>
@@ -333,8 +335,10 @@
                 @foreach (var excursion in Model.Excursions)
                 {
                     <tr style="@(excursion.Status == "Новое" ? "background-color:#f2f2f2;" : excursion.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : excursion.Status == "Отклонено" ? "background-color:#ffa5a557;" : "")">
-                        <td>@excursion.FullName</td>
-                        <td>@excursion.Email</td>
+                        <td>@excursion.Museum?.Name</td>
+                        <td>@excursion.User?.FullName</td>
+                        <td>@excursion.User?.Email</td>
+                        <td>@excursion.User?.Phone</td>
                         <td>@excursion.SchoolName</td>
                         <td>@excursion.PeopleCount</td>
                         <td>@excursion.BookingDate.ToString("dd.MM.yyyy")</td>
