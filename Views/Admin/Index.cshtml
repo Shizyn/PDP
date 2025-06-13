@@ -239,8 +239,10 @@
                     <th>Email</th>
                     <th>Телефон</th>
                     <th>Учебное заведение</th>
-                    <th>Дата</th>
                     <th>Кол-во человек</th>
+                    <th>Дата</th>
+                    <th>Время</th>
+                    <th>Файлы</th>
                     <th>Статус</th>
                     <th>Действия</th>
                 </tr>
@@ -254,8 +256,27 @@
                         <td>@booking.Email</td>
                         <td>@booking.PhoneNumber</td>
                         <td>@booking.SchoolName</td>
+                        <td>@booking.PeopleCount</td>
                         <td>@booking.BookingDate.ToString("dd.MM.yyyy")</td>
                         <td>@booking.TimeRange</td>
+                        <td>
+                            @if (booking.Files != null && booking.Files.Any())
+                            {
+                                foreach (var file in booking.Files)
+                                {
+                                    <div>
+                                        <a class="download-link"
+                                           href="@Url.Action("DownloadFile", "Admin", new { id = file.Id })">
+                                            @file.FileName
+                                        </a>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
                         <td>@booking.Status</td>
                         <td>
                             @if (booking.Status == "Новое")
@@ -299,9 +320,11 @@
                 <tr>
                     <th>ФИО</th>
                     <th>Email</th>
-                    <th>Школа</th>
+                    <th>Учебное заведение</th>
+                    <th>Кол-во человек</th>
                     <th>Дата</th>
                     <th>Время</th>
+                    <th>Файлы</th>
                     <th>Статус</th>
                     <th>Действия</th>
                 </tr>
@@ -313,8 +336,27 @@
                         <td>@excursion.FullName</td>
                         <td>@excursion.Email</td>
                         <td>@excursion.SchoolName</td>
+                        <td>@excursion.PeopleCount</td>
                         <td>@excursion.BookingDate.ToString("dd.MM.yyyy")</td>
                         <td>@excursion.TimeRange</td>
+                        <td>
+                            @if (excursion.Files != null && excursion.Files.Any())
+                            {
+                                foreach (var file in excursion.Files)
+                                {
+                                    <div>
+                                        <a class="download-link"
+                                           href="@Url.Action("ExDownloadFile", "Admin", new { id = file.Id })">
+                                            @file.FileName
+                                        </a>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
                         <td>@excursion.Status</td>
                         <td>
                             @if (excursion.Status == "Новое")

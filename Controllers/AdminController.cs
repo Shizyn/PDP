@@ -355,32 +355,42 @@ namespace DP.Controllers
             var excursions = _context.ExcursionBookings
                 .Include(e => e.User)
                 .ToList();
-
+            var model = new AdminDashboardViewModel
+            {
+                Bookings = _context.Bookings.Include(b => b.Files).ToList(),
+                Excursions = _context.ExcursionBookings.Include(e => e.Files).ToList(),
+                
+            };
             ViewBag.Bookings = bookings;
             ViewBag.Excursions = excursions;
 
             return View();
         }
-        [HttpGet]
-        public async Task<IActionResult> DownloadFile(int id)
+        public ActionResult DownloadFile(int id)
         {
-            var file = await _context.UploadedFiles.FirstOrDefaultAsync(f => f.Id == id);
+            var file = _context.UploadedFiles
+                .Include(f => f.Booking)
+                .FirstOrDefault(f => f.Id == id);
 
-            if (file == null || file.Content == null)
+            if (file == null)
             {
-                return NotFound(); // Если файл не найден
+                return View();
             }
 
-            // Определяем тип контента в зависимости от типа файла
-            var contentType = file.FileType switch
-            {
-                "Excel" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "PDF" => "application/pdf",
-                _ => "application/octet-stream" // Для других типов файлов
-            };
+            return File(file.Content, System.Net.Mime.MediaTypeNames.Application.Octet, file.FileName);
+        }
+        public ActionResult ExDownloadFile(int id)
+        {
+            var file = _context.ExcursionUploadedFiles
+                .Include(f => f.ExcursionBooking)
+                .FirstOrDefault(f => f.Id == id);
 
-            // Возвращаем файл с правильным именем
-            return File(file.Content, contentType, file.FileName);
+            if (file == null)
+            {
+                return View(); 
+            }
+
+            return File(file.Content, System.Net.Mime.MediaTypeNames.Application.Octet, file.FileName);
         }
     }
 }
