@@ -17,7 +17,8 @@ namespace DP.Database
         public DbSet<ExcursionSlot> ExcursionSlots { get; set; }
         public DbSet<ExcursionUploadedFile> ExcursionUploadedFiles { get; set; }
         public DbSet<UploadedFile> UploadedFiles { get; set; }
-        public DbSet<Museum> Museums { get; set; }  
+        public DbSet<Museum> Museums { get; set; }
+        public DbSet<Schedule> Schedules { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -41,6 +42,16 @@ namespace DP.Database
                  .WithMany(b => b.Files)
                  .HasForeignKey(f => f.ExcursionBookingId)
                  .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Schedule>()
+                .HasOne(s => s.ProfProba)
+                .WithMany()
+                .HasForeignKey(s => s.ProfProbaId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Schedule>()
+                .HasOne(s => s.Excursion)
+                .WithMany()
+                .HasForeignKey(s => s.ExcursionId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

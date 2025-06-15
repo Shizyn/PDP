@@ -153,7 +153,6 @@
                 text-decoration: underline;
             }
 
-        /* Стили для статусов */
         tr[style*="background-color:#f2f2f2"] td {
             color: #333;
         }
@@ -166,68 +165,63 @@
             color: #8b0000;
         }
 
-        @@media (max-width: 992px) {
-            table {
-                display: block;
-                overflow-x: auto;
-            }
-
-            th, td {
-                padding: 10px 12px;
-                font-size: 14px;
-            }
-
-                td button, .btn {
-                    min-width: auto;
-                    padding: 6px 8px;
-                    font-size: 13px;
-                    margin: 2px;
-                }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
-        @@media (max-width: 768px) {
-            h1 {
-                font-size: 24px;
-            }
-
-            h2 {
-                font-size: 20px;
-            }
-
-            body {
-                padding: 15px;
-            }
-
-            .button-container {
-                margin: 20px 0;
-            }
-
-            a.export-button {
-                padding: 10px 20px;
-                font-size: 14px;
-            }
+        .admin-buttons {
+            display: flex;
+            gap: 15px;
+            margin-left: auto;
         }
 
-        @@media (max-width: 576px) {
-            h1 {
-                font-size: 20px;
-            }
-
-            h2 {
-                font-size: 18px;
-            }
-
-            th, td {
-                padding: 8px 10px;
-                font-size: 13px;
-            }
+        .admin-btn {
+            background-color: #0056b3;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            min-width: 180px;
         }
+
+            .admin-btn:hover {
+                background-color: #004494;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            }
+
+            .admin-btn i {
+                margin-right: 8px;
+            }
     </style>
 </head>
 <body>
-    <h1 class="centered">Заявки клиентов</h1>
-
-    <!-- Предварительные заявки -->
+    <div class="admin-header">
+        <h1 class="centered">Заявки клиентов</h1>
+        <div class="admin-buttons">
+            <a href="@Url.Action("AddSchedule", "Admin")" class="admin-btn">
+                <i class="fas fa-calendar-plus"></i> Добавить расписание
+            </a>
+            <a href="@Url.Action("ManageProfProby", "Admin")" class="admin-btn">
+                <i class="fas fa-tasks"></i> Управление профпробами
+            </a>
+        </div>
+    </div>
     @if (Model != null && Model.Bookings != null && Model.Bookings.Any())
     {
         <h2>Предварительные заявки</h2>
@@ -303,7 +297,10 @@
                             }
                             <form method="post" action="/Admin/Delete">
                                 <input type="hidden" name="id" value="@booking.ID" />
-                                <button type="submit" onclick="return confirm('Вы уверены, что хотите удалить эту заявку?');">Удалить</button>
+                                <button type="submit" class="btn btn-danger"
+                                        onclick="return confirm('Вы уверены, что хотите удалить эту заявку?');">
+                                    Удалить
+                                </button>
                             </form>
                         </td>
                     </tr>
@@ -385,9 +382,12 @@
                                     <button type="submit">Редактировать</button>
                                 </form> *@
                             }
-                            <form method="post" action="/Admin/DeleteExcursion" onsubmit="return confirm('Удалить экскурсию?');">
+                            <form method="post" action="/Admin/DeleteExcursion">
                                 <input type="hidden" name="id" value="@excursion.Id" />
-                                <button type="submit">Удалить</button>
+                                <button type="submit" class="btn btn-danger"
+                                        onclick="return confirm('Вы уверены, что хотите удалить эту экскурсию?');">
+                                    Удалить
+                                </button>
                             </form>
                         </td>
                     </tr>

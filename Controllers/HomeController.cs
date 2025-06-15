@@ -84,7 +84,6 @@ namespace DP.Controllers
                 _context.Users.Add(user);
                 _context.SaveChanges();
 
-                // Если запрос через AJAX, возвращаем JSON для редиректа
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
                     return Json(new { success = true, redirectUrl = Url.Action("Login", "Home") });
@@ -93,7 +92,6 @@ namespace DP.Controllers
             }
             else
             {
-                // Собираем ошибки из ModelState
                 var errors = ModelState
                     .Where(ms => ms.Value.Errors.Any())
                     .ToDictionary(
@@ -103,10 +101,8 @@ namespace DP.Controllers
 
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
-                    // Возвращаем JSON с ошибками – при этом данные формы не очищаются
                     return Json(new { success = false, errors });
                 }
-                // При обычной отправке возвращаем View с моделью, чтобы значения полей сохранились
                 return View(model);
             }
         }

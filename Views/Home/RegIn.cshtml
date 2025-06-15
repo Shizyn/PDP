@@ -9,18 +9,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"]</title>
 
-    <!-- Подключаем jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Подключаем Inputmask -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7/jquery.inputmask.min.js"></script>
-    <!-- Подключаем jQuery Validate -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
-    <!-- Подключаем дополнительные методы, где реализовано правило pattern -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/additional-methods.min.js"></script>
 
 
     <style>
-        /* Базовые стили и фон */
         body {
             font-family: 'Arial', sans-serif;
             margin: 0;
@@ -32,7 +27,6 @@
             justify-content: center;
         }
 
-        /* Фиксированный header */
         header {
             display: flex;
             justify-content: space-between;
@@ -76,18 +70,16 @@
                         background-color: #ddd;
                     }
 
-        /* Центрируем окно регистрации (учитаем фиксированный header) */
         .main-container {
             display: flex;
             align-items: center;
             justify-content: center;
             width: 100%;
             min-height: calc(100vh - 80px);
-            padding-top: 80px; /* отступ с учётом header */
+            padding-top: 80px; 
             box-sizing: border-box;
         }
 
-        /* Оформление окна регистрации */
         .registration-container {
             background-color: rgba(255, 255, 255, 0.95);
             padding: 40px;
@@ -200,10 +192,8 @@
 
     <script type="text/javascript">
         $(document).ready(function () {
-            // Привязываем маску для номера телефона
             $("#Phone").inputmask("8(999)-999-99-99");
 
-            // Ограничиваем ввод цифр в ФИО
             $("#FullName")
                 .on("keypress", function (e) {
                     if (e.which >= 48 && e.which <= 57) {
@@ -214,7 +204,6 @@
                     this.value = this.value.replace(/\d/g, '');
                 });
 
-            // Инициализируем jQuery Validate с кастомными правилами
             $("#regForm").validate({
                 rules: {
                     FullName: {
@@ -258,12 +247,10 @@
                 }
             });
 
-            // Обработка отправки формы через AJAX
             $("#regForm").on("submit", function (e) {
-                e.preventDefault(); // предотвращаем стандартную отправку
+                e.preventDefault();
                 $("#result").hide().empty();
 
-                // Если форма не проходит клиентскую валидацию, ошибки выводятся, данные остаются
                 if (!$(this).valid()) {
                     return;
                 }
@@ -277,8 +264,6 @@
                     headers: { "X-Requested-With": "XMLHttpRequest" },
                     success: function (response) {
                         if (response.success) {
-                            // При успешной регистрации перенаправляем пользователя,
-                            // при этом данные не сохраняются, поскольку выполняется редирект
                             window.location.href = response.redirectUrl;
                         } else {
                             var errorHtml = "";

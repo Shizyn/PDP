@@ -8,13 +8,13 @@ namespace DP.Models
         public int Id { get; set; }
 
         [Required]
-        public int BookingId { get; set; } // Ссылка на заявку
+        public int BookingId { get; set; } 
 
         [Required]
         public string FileName { get; set; }
 
         [Required]
-        public string FileType { get; set; } // "Excel" или "PDF"
+        public string FileType { get; set; } 
 
         [Required]
         public byte[] Content { get; set; }

@@ -13,7 +13,6 @@ namespace DP.Models
         [Required]
         public string Name { get; set; }
 
-        // Навигация на связанные события
         public ICollection<Event> Events { get; set; } = new List<Event>();
     }
 }

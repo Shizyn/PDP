@@ -49,15 +49,12 @@
             th:nth-child(1), td:nth-child(1) {
                 min-width: 150px;
             }
-            /* Профпроба/Музей */
             th:nth-child(2), td:nth-child(2) {
                 min-width: 120px;
             }
-            /* ФИО */
             th:nth-child(9), td:nth-child(9) {
                 min-width: 150px;
             }
-        /* Файлы */
         th {
             background-color: #0056b3;
             color: white;
@@ -130,7 +127,6 @@
             border: 1px solid #f5c6cb;
         }
 
-        /* Стили для статусов */
         tr[style*="background-color:#f2f2f2"] td {
             color: #333;
         }
@@ -345,7 +341,6 @@
             <p class="booking">Нет окончательных заявок</p>
         } *@
 
-        <!-- Сообщение, если заявок вообще нет -->
         @if ((Model == null || !Model.Any()) &&
         (ViewBag.Excursions == null || !(ViewBag.Excursions as List<DP.Models.ExcursionBooking>).Any()))
         {

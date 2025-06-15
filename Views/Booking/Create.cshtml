@@ -349,7 +349,6 @@
                                         .attr("data-id", item.id)
                                         .css("cursor", "pointer");
 
-                                    // Клик по карточке события показывает детали, но не влияет на даты/время
                                     card.on("click", function () {
                                         $(".event-card").removeClass("selected").css("font-weight", "normal");
                                         $(this).addClass("selected").css("font-weight", "bold");
@@ -376,10 +375,8 @@
                             $("#eventsList").append("<div>Ошибка загрузки событий</div>");
                         });
 
-                    //Загружаем доступные даты для выбранной профпробы (игнорируем событие)
                            $.getJSON("/Booking/GetAvailableDates", { profProbaId: profProbaId })
             .done(function (dateList) {
-                // Преобразуем строки дат в "yyyy-mm-dd" — именно такой формат нужен для сравнения
                 availableDates = dateList.map(dateStr => {
                     const d = new Date(dateStr);
                     return $.datepicker.formatDate("yy-mm-dd", d);
@@ -387,7 +384,7 @@
 
                 $("#bookingDate")
                     .prop("disabled", false)
-                    .datepicker("destroy") // обязательно очищаем старый datepicker
+                    .datepicker("destroy")
                     .datepicker({
                         dateFormat: "yy-mm-dd",
                         minDate: 0,

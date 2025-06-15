@@ -6,6 +6,7 @@ using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using DP.Database;
 using DP.Models;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace DP.Controllers
 {
@@ -49,42 +50,234 @@ namespace DP.Controllers
         {
             return _context.Bookings
                 .Include(b => b.ProfProba)
-                .Include(b => b.User)       // добавляем пользователя
-                .Include(b => b.Files)      // добавляем файлы
+                .Include(b => b.User)      
+                .Include(b => b.Files)     
                 .ToList();
         }
 
         private List<ExcursionBooking> GetExcursionBookings()
         {
             return _context.ExcursionBookings
-                .Include(e => e.Museum)     // подключаем музей
-                .Include(e => e.User)       // подключаем пользователя
-                .Include(e => e.Files)      // подключаем файлы
+                .Include(e => e.Museum)    
+                .Include(e => e.User)      
+                .Include(e => e.Files)      
                 .ToList();
         }
-
-
-
-        public IActionResult Excursions()
+        
+        [HttpGet]
+        public ActionResult AddSchedule()
         {
-            if (HttpContext.Session.GetString("IsAdmin") == "true")
+            var vm = new AddScheduleViewModel
             {
-                var excursions = _context.ExcursionBookings.Include(e => e.User).ToList();
-                return View(excursions);
+                Proba = _context.ProfProby
+                    .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Name })
+                    .ToList(),
+                Excursions = _context.Museums
+                    .Select(m => new SelectListItem { Value = m.Id.ToString(), Text = m.Name })
+                    .ToList(),
+                Date = DateTime.Today
+            };
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult AddSchedule(AddScheduleViewModel vm)
+        {
+            vm.Proba = _context.ProfProby
+                .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Name })
+                .ToList();
+            vm.Excursions = _context.Museums
+                .Select(m => new SelectListItem { Value = m.Id.ToString(), Text = m.Name })
+                .ToList();
+            if (vm.ToTime <= vm.FromTime)
+            {
+                ModelState.AddModelError("", "Время окончания должно быть позже времени начала");
+                return View(vm);
             }
 
-            return RedirectToAction("Login");
+            try
+            {
+                var timeRange = $"{vm.FromTime:hh\\:mm}-{vm.ToTime:hh\\:mm}";
+            var date = vm.Date.Date;
+        
+                bool slotExists = false;
+                if (vm.Type == SlotType.Test)
+                {
+                    var slot = new AvailableSlot
+                    {
+                        ProfProbaId = vm.SelectedEventId,
+                        SlotDate = vm.Date.Date,
+                        TimeRange = $"{vm.FromTime:hh\\:mm}-{vm.ToTime:hh\\:mm}"
+                    };
+                    _context.AvailableSlots.Add(slot);
+                }
+                else if (vm.Type == SlotType.Excursion)
+                {
+                    var slot = new ExcursionSlot
+                    {
+                        MuseumId = vm.SelectedEventId,
+                        SlotDate = vm.Date.Date, 
+                        TimeRange = $"{vm.FromTime:hh\\:mm}-{vm.ToTime:hh\\:mm}"
+                    };
+                    _context.ExcursionSlots.Add(slot);
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Неизвестный тип слота");
+                    return View(vm);
+                }
+                if (slotExists)
+                {
+                    ModelState.AddModelError("", "Слот на это время уже существует");
+                    return View(vm);
+                }
+                _context.SaveChanges();
+                return RedirectToAction("AddSchedule");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при сохранении слота");
+                ModelState.AddModelError("", "Произошла ошибка при сохранении. Пожалуйста, попробуйте снова.");
+                return View(vm);
+            }
         }
-        [HttpPost]
-        public IActionResult DeleteExcursion(int id)
-        {
-            var excursion = _context.ExcursionBookings.FirstOrDefault(e => e.Id == id);
-            if (excursion == null) return NotFound();
 
-            _context.ExcursionBookings.Remove(excursion);
-            _context.SaveChanges();
-            return RedirectToAction("Index");
+        [HttpGet]
+        public IActionResult ManageProfProby()
+        {
+            if (HttpContext.Session.GetString("IsAdmin") != "true")
+                return RedirectToAction("Login");
+
+            var profProby = _context.ProfProby
+                .Include(p => p.Events)
+                .ToList();
+
+            var viewModel = new ProfProbaManagementViewModel
+            {
+                ProfProby = profProby,
+                EventsByProfProba = profProby.ToDictionary(p => p.Id, p => p.Events.ToList())
+            };
+
+            return View(viewModel);
         }
+
+        [HttpPost]
+        public IActionResult AddProfProba(ProfProbaManagementViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.NewProfProbaName))
+            {
+                TempData["Error"] = "Название профпробы не может быть пустым";
+                return RedirectToAction("ManageProfProby");
+            }
+
+            try
+            {
+                var profProba = new ProfProba { Name = model.NewProfProbaName };
+                _context.ProfProby.Add(profProba);
+                _context.SaveChanges();
+                TempData["Success"] = "Профпроба успешно добавлена!";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Ошибка при добавлении профпробы: " + ex.Message;
+            }
+
+            return RedirectToAction("ManageProfProby");
+        }
+
+        [HttpPost]
+        public IActionResult AddEvent(ProfProbaManagementViewModel model)
+        {
+            if (!model.SelectedProfProbaId.HasValue)
+            {
+                TempData["Error"] = "Выберите профессиональную пробу";
+                return RedirectToAction("ManageProfProby");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.NewEventName))
+            {
+                TempData["Error"] = "Название события не может быть пустым";
+                return RedirectToAction("ManageProfProby");
+            }
+
+            try
+            {
+                var newEvent = new Event
+                {
+                    Name = model.NewEventName,
+                    Description = model.NewEventDescription,
+                    ProfProbaId = model.SelectedProfProbaId.Value
+                };
+
+                _context.Events.Add(newEvent);
+                _context.SaveChanges();
+                TempData["Success"] = "Событие успешно добавлено!";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Ошибка при добавлении события: " + ex.Message;
+            }
+
+            return RedirectToAction("ManageProfProby");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteProfProba(int id)
+        {
+            try
+            {
+                var profProba = await _context.ProfProby
+                    .Include(p => p.Events)
+                    .FirstOrDefaultAsync(p => p.Id == id);
+
+                if (profProba == null)
+                {
+                    TempData["Error"] = "Профпроба не найдена";
+                    return RedirectToAction("ManageProfProby");
+                }
+
+                _context.Events.RemoveRange(profProba.Events);
+                _context.ProfProby.Remove(profProba);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = $"Профпроба '{profProba.Name}' и все связанные события успешно удалены!";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Ошибка при удалении профпробы: {ex.Message}";
+                _logger.LogError(ex, "Ошибка при удалении профпробы ID: {Id}", id);
+            }
+
+            return RedirectToAction("ManageProfProby");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteEvent(int id) 
+        {
+            try
+            {
+                var eventItem = await _context.Events.FindAsync(id);
+                if (eventItem == null)
+                {
+                    TempData["Error"] = "Событие не найдено";
+                    return RedirectToAction("ManageProfProby");
+                }
+
+                _context.Events.Remove(eventItem);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = $"Событие '{eventItem.Name}' успешно удалено!";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Ошибка при удалении события: {ex.Message}";
+                _logger.LogError(ex, "Ошибка при удалении события ID: {Id}", id);
+            }
+
+            return RedirectToAction("ManageProfProby");
+        }
+        
 
         [HttpGet]
         public IActionResult EditExcursion(int id)
@@ -152,15 +345,52 @@ namespace DP.Controllers
         [HttpPost]
         public IActionResult Delete(int id)
         {
-            var booking = _context.Bookings.FirstOrDefault(b => b.ID == id);
+            var booking = _context.Bookings
+                .Include(b => b.Files) 
+                .FirstOrDefault(b => b.ID == id);
+
             if (booking != null)
             {
+                // Удаляем связанные файлы
+                foreach (var file in booking.Files.ToList())
+                {
+                    _context.UploadedFiles.Remove(file);
+                }
+
                 _context.Bookings.Remove(booking);
                 _context.SaveChanges();
+                TempData["Success"] = "Заявка успешно удалена!";
+            }
+            else
+            {
+                TempData["Error"] = "Заявка не найдена";
             }
             return RedirectToAction("Index");
         }
+        [HttpPost]
+        public IActionResult DeleteExcursion(int id)
+        {
+            var excursion = _context.ExcursionBookings
+                .Include(e => e.Files) 
+                .FirstOrDefault(e => e.Id == id);
 
+            if (excursion != null)
+            {
+                foreach (var file in excursion.Files.ToList())
+                {
+                    _context.ExcursionUploadedFiles.Remove(file);
+                }
+
+                _context.ExcursionBookings.Remove(excursion);
+                _context.SaveChanges();
+                TempData["Success"] = "Экскурсия успешно удалена!";
+            }
+            else
+            {
+                TempData["Error"] = "Экскурсия не найдена";
+            }
+            return RedirectToAction("Index");
+        }
         // Метод для удаления окончательной заявки
         //[HttpPost]
         //public IActionResult DeleteFinalBooking(int id)
@@ -225,13 +455,9 @@ namespace DP.Controllers
             return View();
         }
        
-       
-
-        // Метод для редактирования окончательной заявки
         [HttpGet]
         public IActionResult UpdateFinalBooking(int id)
         {
-            //var booking = _context.Bookings.FirstOrDefault(b => b.ID == id);
             var booking = _context.Bookings.Include(b => b.Files).FirstOrDefault(b => b.ID == id);
             if (booking == null)
             {
@@ -304,14 +530,12 @@ namespace DP.Controllers
 
             try
             {
-                // Удаляем все прикрепленные файлы для данной заявки
                 var existingFiles = await _context.UploadedFiles.Where(f => f.BookingId == bookingId).ToListAsync();
                 if (existingFiles.Any())
                 {
                     _context.UploadedFiles.RemoveRange(existingFiles);
                 }
 
-                // Сохранение файлов, если они были загружены
                 if (excelFile != null)
                 {
                     using (var excelStream = new MemoryStream())

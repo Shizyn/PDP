@@ -217,7 +217,6 @@
         }
     </div>
 
-    <!-- Скрипты -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7-beta.19/jquery.inputmask.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
@@ -226,14 +225,12 @@
         $(document).ready(function () {
             let availableExcursionDates = [];
 
-            // Загружаем список музеев
             $.getJSON("/Booking/GetMuseums", function (museums) {
                 museums.forEach(museum => {
                     $("#museumSelect").append(`<option value="${museum.Id}">${museum.Name}</option>`);
                 });
             });
 
-            // При выборе музея загружаем доступные даты экскурсий
             $("#museumSelect").on("change", function () {
                 const museumId = $(this).val();
                 $("#excursionBookingDate").val("").prop("disabled", true);
@@ -256,7 +253,6 @@
                 });
             });
 
-            // При выборе даты загружаем доступные временные слоты
             function loadAvailableExcursionTimes(museumId, selectedDate) {
                 $("#excursionTimeRange").empty().append('<option value="">Загрузка...</option>').prop("disabled", true);
 

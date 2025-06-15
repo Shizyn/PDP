@@ -107,7 +107,6 @@ namespace DP.Controllers
                 .Select(s => s.TimeRange)
                 .ToList();
 
-            // Получаем уже занятые слоты
             var busyTimes = _context.Bookings
                 .Where(b => b.BookingDate == date && b.ProfProbaId == profProbaId)
                 .Select(b => b.TimeRange)
@@ -327,7 +326,6 @@ namespace DP.Controllers
                 _context.Bookings.Add(booking);
                 await _context.SaveChangesAsync();
 
-                // Сохраняем файл Excel
                 if (excelFile != null && excelFile.Length > 0)
                 {
                     using var ms = new MemoryStream();

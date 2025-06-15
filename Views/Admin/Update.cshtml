@@ -266,17 +266,14 @@
         @section Scripts {
             <script>
                 $(document).ready(function() {
-                    // Маска для телефона
                     $("#PhoneNumber").inputmask("+7(999)999-99-99");
 
-                    // Инициализация текущих значений
                     const currentProfProbaId = '@Model.ProfProbaId';
 
                     if (currentProfProbaId) {
                         loadEvents(currentProfProbaId, currentEventId);
                     }
 
-                    // Динамическая загрузка событий
                     $("#profProbaSelect").change(function() {
                         const profProbaId = $(this).val();
                         loadEvents(profProbaId);
