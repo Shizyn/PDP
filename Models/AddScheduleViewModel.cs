@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DP.Models
 {
-    public enum SlotType { Test = 1, Excursion = 2 }
+    public enum SlotType { Профпроба = 1, Экскурсия = 2 }
 
     public class AddScheduleViewModel
     {

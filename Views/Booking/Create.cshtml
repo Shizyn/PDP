@@ -275,15 +275,27 @@
                 </select>
             </div>
             <div class="file-section">
-                <a href="@Url.Action("DownloadExcelTemplate", "Booking")" target="_blank">
-                    Скачать шаблон участников
-                </a>
+                <a href="#" id="downloadTemplateLink">Скачать шаблон участников</a>
                 <input type="file" name="excelFile" accept=".xlsx,.xls" />
             </div>
-
+            
             <button type="submit" class="btn-submit">Создать заявку</button>
             <a href="/Booking" class="btn btn-secondary" style="margin-left: 10px;">Вернуться назад</a>
-        </form>
+		</form>
+        <script>
+				   $(document).ready(function() {
+					   // Обновление ссылки скачивания при изменении данных
+					   function updateDownloadLink() {
+						   const school = $("#schoolName").val() || "школа";
+						   const count = $("#peopleCount").val() || 1;
+						   const link = `@Url.Action("DownloadExcelTemplate", "Booking")?schoolName=${encodeURIComponent(school)}&peopleCount=${count}`;
+						   $("#downloadTemplateLink").attr("href", link);
+					   }
+
+					   $("#schoolName, #peopleCount").on("input", updateDownloadLink);
+					   updateDownloadLink();
+				   });
+		</script>
         <script type="text/javascript">
             $(document).ready(function () {
                 $("#phone").inputmask("9(999)-999-99-99");

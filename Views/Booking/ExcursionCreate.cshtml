@@ -198,10 +198,10 @@
 
             <div class="form-group">
                 <label>Скачать шаблон списка участников (Excel):</label>
-                <a href="@Url.Action("DownloadExcelTemplate","Booking")" target="_blank">Скачать шаблон участников</a>
+                <a href="#" id="downloadTemplateLink">Скачать шаблон участников</a>
                 <input type="file" name="excelFile" accept=".xlsx,.xls" />
             </div>
-
+            
             <button type="submit" class="btn-submit">Отправить заявку</button>
             <a href="/Booking" class="btn">Назад</a>
         </form>
@@ -220,49 +220,90 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7-beta.19/jquery.inputmask.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+	<script>
+		$(document).ready(function() {
+			function updateDownloadLink() {
+				const school = $("#schoolName").val() || "школа";
+				const count = $("#peopleCount").val() || 1;
+				const link = `@Url.Action("DownloadExcelTemplate", "Booking")?schoolName=${encodeURIComponent(school)}&peopleCount=${count}`;
+				$("#downloadTemplateLink").attr("href", link);
+			}
 
+			$("#schoolName, #peopleCount").on("input", updateDownloadLink);
+			updateDownloadLink();
+		});
+	</script>
     <script>
-        $(document).ready(function () {
+                    $(function() {
+            console.log("Document ready");
             let availableExcursionDates = [];
 
-            $.getJSON("/Booking/GetMuseums", function (museums) {
-                museums.forEach(museum => {
-                    $("#museumSelect").append(`<option value="${museum.Id}">${museum.Name}</option>`);
-                });
-            });
-
-            $("#museumSelect").on("change", function () {
+            $("#museumSelect").on("change", function() {
                 const museumId = $(this).val();
+                console.log("Selected museum ID:", museumId);
+
                 $("#excursionBookingDate").val("").prop("disabled", true);
-                $("#excursionTimeRange").empty().append('<option value="">Сначала выберите дату</option>').prop("disabled", true);
+                $("#excursionTimeRange").html('<option value="">Сначала выберите дату</option>').prop("disabled", true);
 
                 if (!museumId) return;
 
-                $.getJSON("/Booking/GetAvailableExcursionDates", { museumId }, function (dates) {
-                    availableExcursionDates = dates.map(dateStr => $.datepicker.formatDate("yy-mm-dd", new Date(dateStr)));
+                $.getJSON("/Booking/GetAvailableExcursionDates", { museumId: museumId })
+                    .done(function(dates) {
+                        console.log("Received dates:", dates);
+                        availableExcursionDates = dates;
 
-                    $("#excursionBookingDate").prop("disabled", false).datepicker({
-                        dateFormat: "yy-mm-dd",
-                        minDate: 0,
-                        maxDate: "+1m",
-                        beforeShowDay: date => [availableExcursionDates.includes($.datepicker.formatDate("yy-mm-dd", date))],
-                        onSelect: function (dateText) {
-                            loadAvailableExcursionTimes(museumId, dateText);
-                        }
-                    }).attr("readonly", true);
-                });
+                        $("#excursionBookingDate")
+                            .prop("disabled", false)
+                            .datepicker({
+                                dateFormat: "yy-mm-dd",
+                                minDate: 0,
+                                maxDate: "+1m",
+                                beforeShowDay: function(date) {
+                                    const dateString = $.datepicker.formatDate("yy-mm-dd", date);
+                                    const available = availableExcursionDates.includes(dateString);
+                                    console.log(`Date ${dateString} available:`, available);
+                                    return [available];
+                                },
+                                onSelect: function(dateText) {
+                                    console.log("Selected date:", dateText);
+                                    loadAvailableExcursionTimes(museumId, dateText);
+                                }
+                            })
+                            .attr("readonly", true);
+                    })
+                    .fail(function(jqXHR, textStatus, errorThrown) {
+                        console.error("Dates load error:", textStatus, errorThrown);
+                        alert("Ошибка загрузки дат");
+                    });
             });
 
             function loadAvailableExcursionTimes(museumId, selectedDate) {
-                $("#excursionTimeRange").empty().append('<option value="">Загрузка...</option>').prop("disabled", true);
+                console.log(`Loading times for museum ${museumId}, date ${selectedDate}`);
+                $("#excursionTimeRange").html('<option value="">Загрузка...</option>').prop("disabled", true);
 
-                $.getJSON("/Booking/GetAvailableExcursionTimes", { museumId, date: selectedDate }, function (timeRanges) {
-                    $("#excursionTimeRange").empty().append('<option value="">Выберите время</option>');
+                $.getJSON("/Booking/GetAvailableExcursionTimes", {
+                    museumId: museumId,
+                    date: selectedDate
+                })
+                .done(function(timeRanges) {
+                    console.log("Received time ranges:", timeRanges);
+                    let options = '<option value="">Выберите время</option>';
 
-                    timeRanges.length === 0
-                        ? $("#excursionTimeRange").append('<option value="">Нет доступных времён</option>')
-                        : timeRanges.forEach(range => $("#excursionTimeRange").append(`<option value="${range}">${range}</option>`));
+                    if (timeRanges.length === 0) {
+                        options += '<option value="">Нет доступных времён</option>';
+                    } else {
+                        timeRanges.forEach(range => {
+                            options += `<option value="${range}">${range}</option>`;
+                        });
+                    }
 
+                    $("#excursionTimeRange").html(options);
+                })
+                .fail(function(jqXHR, textStatus, errorThrown) {
+                    console.error("Times load error:", textStatus, errorThrown);
+                    $("#excursionTimeRange").html('<option value="">Ошибка загрузки</option>');
+                })
+                .always(function() {
                     $("#excursionTimeRange").prop("disabled", false);
                 });
             }

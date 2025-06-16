@@ -208,12 +208,11 @@ namespace DP.Controllers
                 return View("ExcursionCreate");
             }
         }
-
         [HttpGet]
         public IActionResult GetAvailableExcursionDates(int museumId)
         {
             var dates = _context.ExcursionSlots
-                .Where(s => s.MuseumId == museumId)
+                .Where(s => s.MuseumId == museumId) 
                 .Select(s => s.SlotDate)
                 .Distinct()
                 .OrderBy(d => d)
@@ -221,24 +220,33 @@ namespace DP.Controllers
 
             return Json(dates.Select(d => d.ToString("yyyy-MM-dd")).ToList());
         }
+        
 
         [HttpGet]
         public IActionResult GetAvailableExcursionTimes(int museumId, string date)
         {
-            if (!DateTime.TryParse(date, out var selectedDate))
-                return BadRequest();
+            try
+            {
+                if (!DateTime.TryParse(date, out var selectedDate))
+                    return BadRequest("Неверный формат даты");
 
-            var times = _context.ExcursionSlots
-                .Where(s => s.MuseumId == museumId && s.SlotDate == selectedDate)
-                .Select(s => s.TimeRange)
-                .ToList();
+                var times = _context.ExcursionSlots
+                    .Where(s => s.MuseumId == museumId && s.SlotDate == selectedDate)
+                    .Select(s => s.TimeRange)
+                    .ToList();
 
-            var busyTimes = _context.ExcursionBookings
-                .Where(b => b.BookingDate == selectedDate)
-                .Select(b => b.TimeRange)
-                .ToList();
+                var busyTimes = _context.ExcursionBookings
+                    .Where(b => b.MuseumId == museumId && b.BookingDate == selectedDate)
+                    .Select(b => b.TimeRange)
+                    .ToList();
 
-            return Json(times.Except(busyTimes).ToList());
+                return Json(times.Except(busyTimes).ToList());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка в GetAvailableExcursionTimes");
+                return StatusCode(500, "Внутренняя ошибка сервера");
+            }
         }
         [HttpGet]
         public IActionResult DownloadExcursionFile(int id)
@@ -359,84 +367,75 @@ namespace DP.Controllers
 
 
         [HttpGet]
-        public IActionResult DownloadExcelTemplate()
+        public IActionResult DownloadExcelTemplate(string schoolName, int peopleCount)
         {
-            ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
             var package = new ExcelPackage();
             var worksheet = package.Workbook.Worksheets.Add("Список участников");
 
-            //стиль для заголовка "Список участников" (одиночная ячейка)
-            using (ExcelRange range = worksheet.Cells[1, 1])
+            // Заголовок с названием школы
+            worksheet.Cells[1, 1].Value = $"Список участников {schoolName}";
+            using (ExcelRange range = worksheet.Cells[1, 1, 1, 8]) // Объединяем 8 ячеек
             {
-                range.Value = "Список участников";
+                range.Merge = true;
                 range.Style.Font.Bold = true;
-                range.Style.Font.Size = 12;
+                range.Style.Font.Size = 14;
+                range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
             }
 
-            //заголовки для участников
-            worksheet.Cells[2, 1].Value = "№";
-            worksheet.Cells[2, 2].Value = "ФИО";
-            worksheet.Cells[2, 3].Value = "Дата рождения";
-            worksheet.Cells[2, 4].Value = "Школа, класс";
+            // Заголовки для участников
+            worksheet.Cells[3, 1].Value = "№";
+            worksheet.Cells[3, 2].Value = "ФИО участника";
+            worksheet.Cells[3, 3].Value = "Дата рождения";
+            worksheet.Cells[3, 4].Value = "Школа, класс";
 
-            //применяем стиль к заголовкам
-            string headerParticipantsRange = "A2:D2";
-            ApplyHeaderStyle(worksheet.Cells[headerParticipantsRange]);
+            // Заголовки для сопровождающих (справа)
+            worksheet.Cells[3, 6].Value = "№";
+            worksheet.Cells[3, 7].Value = "ФИО сопровождающего";
+            worksheet.Cells[3, 8].Value = "Должность";
 
-            //заполнение 18 строк (нумерация)
-            for (int i = 3; i <= 20; i++)
+            // Стили для заголовков
+            ApplyHeaderStyle(worksheet.Cells[3, 1, 3, 4]);
+            ApplyHeaderStyle(worksheet.Cells[3, 6, 3, 8]);
+
+            // Заполнение участников
+            for (int i = 1; i <= peopleCount; i++)
             {
-                worksheet.Cells[i, 1].Value = i - 2; //номер
+                int row = 3 + i;
+                worksheet.Cells[row, 1].Value = i;
             }
 
-            //устанавливаем границы для таблицы участников
-            string tableParticipantsRange = "A2:D20";
-            ApplyTableStyle(worksheet.Cells[tableParticipantsRange]);
-
-            //заголовки для сопровождающих
-            worksheet.Cells[22, 1].Value = "Сопровождающие";
-            using (ExcelRange range = worksheet.Cells[22, 1])
+            // Заполнение сопровождающих (фиксированные 4 строки)
+            for (int i = 1; i <= 4; i++)
             {
-                range.Style.Font.Bold = true;
-                range.Style.Font.Size = 12;
+                int row = 3 + i;
+                worksheet.Cells[row, 6].Value = i;
             }
 
-            worksheet.Cells[23, 1].Value = "№";
-            worksheet.Cells[23, 2].Value = "ФИО";
-            worksheet.Cells[23, 3].Value = "Дата рождения";
-            worksheet.Cells[23, 4].Value = "Должность";
+            // Границы таблиц
+            ApplyTableStyle(worksheet.Cells[3, 1, 3 + peopleCount, 4]);
+            ApplyTableStyle(worksheet.Cells[3, 6, 3 + 4, 8]);
 
-            //применяем стиль к заголовкам сопровождающих
-            string headerAccompanyingRange = "A23:D23";
-            ApplyHeaderStyle(worksheet.Cells[headerAccompanyingRange]);
-
-            //заполнение 4 строк (нумерация)
-            for (int i = 24; i <= 27; i++)
-            {
-                worksheet.Cells[i, 1].Value = i - 23; //номер
-            }
-
-            //применяем стиль к таблице сопровождающих
-            string tableAccompanyingRange = "A23:D27";
-            ApplyTableStyle(worksheet.Cells[tableAccompanyingRange]);
-
-            //автоматическая настройка ширины столбцов
+            // Автоподбор ширины
             worksheet.Cells.AutoFitColumns();
 
-            //возвращаем файл
             var stream = new MemoryStream();
             package.SaveAs(stream);
             stream.Position = 0;
 
-            return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Шаблон_участников.xlsx");
+            return File(
+                stream,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"Шаблон_{schoolName}.xlsx"
+            );
         }
 
         private void ApplyHeaderStyle(ExcelRange headerCells)
         {
-            headerCells.Style.Font.Bold = true; //шрифт жирный
-            headerCells.Style.Fill.PatternType = ExcelFillStyle.Solid; //тип заливки
-            headerCells.Style.Fill.BackgroundColor.SetColor(ColorTranslator.FromHtml("#BDD7EE")); //цвет заливки
-            headerCells.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;  //выравнивание по центру
+            headerCells.Style.Font.Bold = true;
+            headerCells.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            headerCells.Style.Fill.BackgroundColor.SetColor(ColorTranslator.FromHtml("#BDD7EE"));
+            headerCells.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
         }
 
         private void ApplyTableStyle(ExcelRange tableCells)
@@ -446,7 +445,6 @@ namespace DP.Controllers
             tableCells.Style.Border.Left.Style = ExcelBorderStyle.Thin;
             tableCells.Style.Border.Right.Style = ExcelBorderStyle.Thin;
 
-            //цвет границ
             tableCells.Style.Border.Top.Color.SetColor(Color.Black);
             tableCells.Style.Border.Bottom.Color.SetColor(Color.Black);
             tableCells.Style.Border.Left.Color.SetColor(Color.Black);

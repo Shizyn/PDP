@@ -63,7 +63,7 @@ namespace DP.Controllers
                 .Include(e => e.Files)      
                 .ToList();
         }
-        
+
         [HttpGet]
         public ActionResult AddSchedule()
         {
@@ -90,49 +90,70 @@ namespace DP.Controllers
             vm.Excursions = _context.Museums
                 .Select(m => new SelectListItem { Value = m.Id.ToString(), Text = m.Name })
                 .ToList();
+
             if (vm.ToTime <= vm.FromTime)
             {
                 ModelState.AddModelError("", "Время окончания должно быть позже времени начала");
                 return View(vm);
             }
 
+            var timeRange = $"{vm.FromTime:hh\\:mm}-{vm.ToTime:hh\\:mm}";
+            var date = vm.Date.Date;
+
             try
             {
-                var timeRange = $"{vm.FromTime:hh\\:mm}-{vm.ToTime:hh\\:mm}";
-            var date = vm.Date.Date;
-        
                 bool slotExists = false;
-                if (vm.Type == SlotType.Test)
+
+                if (vm.Type == SlotType.Профпроба)
                 {
-                    var slot = new AvailableSlot
+                    slotExists = _context.AvailableSlots
+                        .Any(s => s.ProfProbaId == vm.SelectedEventId &&
+                                  s.SlotDate == date &&
+                                  s.TimeRange == timeRange);
+
+                    if (!slotExists)
                     {
-                        ProfProbaId = vm.SelectedEventId,
-                        SlotDate = vm.Date.Date,
-                        TimeRange = $"{vm.FromTime:hh\\:mm}-{vm.ToTime:hh\\:mm}"
-                    };
-                    _context.AvailableSlots.Add(slot);
+                        var slot = new AvailableSlot
+                        {
+                            ProfProbaId = vm.SelectedEventId,
+                            SlotDate = date,
+                            TimeRange = timeRange
+                        };
+                        _context.AvailableSlots.Add(slot);
+                    }
                 }
-                else if (vm.Type == SlotType.Excursion)
+                else if (vm.Type == SlotType.Экскурсия)
                 {
-                    var slot = new ExcursionSlot
+                    slotExists = _context.ExcursionSlots
+                        .Any(s => s.MuseumId == vm.SelectedEventId &&
+                                  s.SlotDate == date &&
+                                  s.TimeRange == timeRange);
+
+                    if (!slotExists)
                     {
-                        MuseumId = vm.SelectedEventId,
-                        SlotDate = vm.Date.Date, 
-                        TimeRange = $"{vm.FromTime:hh\\:mm}-{vm.ToTime:hh\\:mm}"
-                    };
-                    _context.ExcursionSlots.Add(slot);
+                        var slot = new ExcursionSlot
+                        {
+                            MuseumId = vm.SelectedEventId,
+                            SlotDate = date,
+                            TimeRange = timeRange
+                        };
+                        _context.ExcursionSlots.Add(slot);
+                    }
                 }
                 else
                 {
                     ModelState.AddModelError("", "Неизвестный тип слота");
                     return View(vm);
                 }
+
                 if (slotExists)
                 {
                     ModelState.AddModelError("", "Слот на это время уже существует");
                     return View(vm);
                 }
+
                 _context.SaveChanges();
+                TempData["Success"] = "Слот успешно добавлен!";
                 return RedirectToAction("AddSchedule");
             }
             catch (Exception ex)
@@ -142,6 +163,47 @@ namespace DP.Controllers
                 return View(vm);
             }
         }
+
+        //[HttpGet]
+        //public IActionResult GetExistingSlots(int type, int? eventId, string dateStr)
+        //{
+        //    try
+        //    {
+        //        if (eventId == null || eventId == 0)
+        //            return Json(new { error = "Не выбрано мероприятие" });
+
+        //        if (!DateTime.TryParse(dateStr, out DateTime date))
+        //            return Json(new { error = "Неверный формат даты" });
+
+        //        List<string> slots = new List<string>();
+
+        //        if (type == (int)SlotType.Профпроба)
+        //        {
+        //            slots = _context.AvailableSlots
+        //                .Where(s => s.ProfProbaId == eventId && s.SlotDate == date.Date)
+        //                .Select(s => s.TimeRange)
+        //                .ToList();
+        //        }
+        //        else if (type == (int)SlotType.Экскурсия)
+        //        {
+        //            slots = _context.ExcursionSlots
+        //                .Where(s => s.MuseumId == eventId && s.SlotDate == date.Date)
+        //                .Select(s => s.TimeRange)
+        //                .ToList();
+        //        }
+        //        else
+        //        {
+        //            return Json(new { error = "Неизвестный тип слота" });
+        //        }
+
+        //        return Json(new { slots = slots });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Ошибка в GetExistingSlots");
+        //        return Json(new { error = $"Ошибка сервера: {ex.Message}" });
+        //    }
+        //}
 
         [HttpGet]
         public IActionResult ManageProfProby()

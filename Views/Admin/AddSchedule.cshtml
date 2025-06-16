@@ -142,6 +142,41 @@
             display: none;
         }
 
+        .slots-container {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+
+        .slots-header {
+            font-weight: 600;
+            color: #0056b3;
+            margin-bottom: 10px;
+        }
+
+        .slots-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .slot-item {
+            padding: 8px 12px;
+            background-color: #e9f7fe;
+            border-left: 4px solid #0056b3;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+
+        .no-slots {
+            font-style: italic;
+            color: #6c757d;
+            padding: 10px;
+            text-align: center;
+        }
+
         @@media (max-width: 768px) {
             .schedule-container {
                 padding: 25px;
@@ -241,32 +276,116 @@
             <button type="submit" class="btn-submit">Сохранить</button>
             <a href="/Home/Index" class="btn-back">Вернуться назад</a>
         </form>
+
+        @* <div id="existingSlotsContainer" class="slots-container" style="display: none;">
+            <div class="slots-header">Существующие слоты:</div>
+            <div id="slotsList"></div>
+        </div> *@
     </div>
 
     <script>
-        $(function () {
+        $(function() {
             function toggleSelects() {
                 var val = $('#slotType').val();
                 if (val === '1') {
                     $('#testSelect').show();
                     $('#excursionSelect').hide();
-                    $('#testDropdown').prop('disabled', false).attr('name', 'SelectedEventId');
-                    $('#excursionDropdown').prop('disabled', true).removeAttr('name');
                 } else if (val === '2') {
                     $('#testSelect').hide();
                     $('#excursionSelect').show();
-                    $('#testDropdown').prop('disabled', true).removeAttr('name');
-                    $('#excursionDropdown').prop('disabled', false).attr('name', 'SelectedEventId');
                 } else {
                     $('#testSelect, #excursionSelect').hide();
-                    $('#testDropdown, #excursionDropdown').prop('disabled', true).removeAttr('name');
                 }
             }
 
-            $('#slotType').on('change', toggleSelects);
+            //        function loadExistingSlots() {
+            // var slotType = $('#slotType').val();
+            // var eventId = null;
+            // var date = $('#Date').val();
+
+            // if (!slotType || !date) {
+            //     $('#existingSlotsContainer').hide();
+            //     return;
+            // }
+
+            // if (slotType === '1') {
+            //     eventId = $('#testDropdown').val();
+            // } else if (slotType === '2') {
+            //     eventId = $('#excursionDropdown').val();
+            // }
+
+            // if (!eventId) {
+            //     $('#existingSlotsContainer').hide();
+            //     return;
+            // }
+
+            // $('#slotsList').html('<div class="no-slots">Загрузка...</div>');
+            // $('#existingSlotsContainer').show();
+
+            // $.ajax({
+            //     url: '@Url.Action("GetExistingSlots", "Home")',
+            //     type: 'GET',
+            //     data: {
+            //         type: slotType,
+            //         eventId: eventId,
+            //         dateStr: date
+            //     },
+            //     dataType: 'json',
+            //     success: function(response) {
+            //         $('#slotsList').empty();
+
+            //         if (response.error) {
+            //             $('#slotsList').html(
+            //                 '<div class="no-slots">' + response.error + '</div>'
+            //             );
+            //             return;
+            //         }
+
+            //         if (response.slots && response.slots.length > 0) {
+            //             var list = $('<ul class="slots-list"></ul>');
+
+            //             response.slots.forEach(function(slot) {
+            //                 var formattedSlot = slot.replace('-', ' - ');
+            //                 list.append(
+            //                     '<li class="slot-item">' + formattedSlot + '</li>'
+            //                 );
+            //             });
+
+            //             $('#slotsList').append(list);
+            //         } else {
+            //             $('#slotsList').html(
+            //                 '<div class="no-slots">Слотов не найдено</div>'
+            //             );
+            //         }
+            //     },
+            //     error: function(xhr) {
+            //         var errorMsg = 'Ошибка загрузки: ';
+
+            //         if (xhr.responseJSON && xhr.responseJSON.error) {
+            //             errorMsg += xhr.responseJSON.error;
+            //         } else {
+            //             errorMsg += xhr.status + ' ' + xhr.statusText;
+            //         }
+
+            //         $('#slotsList').html(
+            //             '<div class="no-slots">' + errorMsg + '</div>'
+            //         );
+            //     }
+            // });
+        }
+
+            // Инициализация
             toggleSelects();
+            loadExistingSlots();
+
+            // Обработчики событий
+            $('#slotType').change(function() {
+                toggleSelects();
+                loadExistingSlots();
+            });
+
+            $('#testDropdown, #excursionDropdown, #Date').change(loadExistingSlots);
         });
     </script>
 </body>
 </html>
-    
