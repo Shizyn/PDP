@@ -50,17 +50,17 @@ namespace DP.Controllers
         {
             return _context.Bookings
                 .Include(b => b.ProfProba)
-                .Include(b => b.User)      
-                .Include(b => b.Files)     
+                .Include(b => b.User)
+                .Include(b => b.Files)
                 .ToList();
         }
 
         private List<ExcursionBooking> GetExcursionBookings()
         {
             return _context.ExcursionBookings
-                .Include(e => e.Museum)    
-                .Include(e => e.User)      
-                .Include(e => e.Files)      
+                .Include(e => e.Museum)
+                .Include(e => e.User)
+                .Include(e => e.Files)
                 .ToList();
         }
 
@@ -91,13 +91,15 @@ namespace DP.Controllers
                 .Select(m => new SelectListItem { Value = m.Id.ToString(), Text = m.Name })
                 .ToList();
 
+            // 1. Исправление проверки времени
             if (vm.ToTime <= vm.FromTime)
             {
                 ModelState.AddModelError("", "Время окончания должно быть позже времени начала");
                 return View(vm);
             }
 
-            var timeRange = $"{vm.FromTime:hh\\:mm}-{vm.ToTime:hh\\:mm}";
+            // 2. Корректное формирование временного диапазона
+            var timeRange = $"{vm.FromTime.Hours:00}:{vm.FromTime.Minutes:00}-{vm.ToTime.Hours:00}:{vm.ToTime.Minutes:00}";
             var date = vm.Date.Date;
 
             try
@@ -106,12 +108,24 @@ namespace DP.Controllers
 
                 if (vm.Type == SlotType.Профпроба)
                 {
+                    // Проверка существования слота с учетом времени
                     slotExists = _context.AvailableSlots
                         .Any(s => s.ProfProbaId == vm.SelectedEventId &&
                                   s.SlotDate == date &&
                                   s.TimeRange == timeRange);
+                }
+                else if (vm.Type == SlotType.Экскурсия)
+                {
+                    // Проверка для экскурсий
+                    slotExists = _context.ExcursionSlots
+                        .Any(s => s.MuseumId == vm.SelectedEventId &&
+                                  s.SlotDate == date &&
+                                  s.TimeRange == timeRange);
+                }
 
-                    if (!slotExists)
+                if (!slotExists)
+                {
+                    if (vm.Type == SlotType.Профпроба)
                     {
                         var slot = new AvailableSlot
                         {
@@ -121,15 +135,7 @@ namespace DP.Controllers
                         };
                         _context.AvailableSlots.Add(slot);
                     }
-                }
-                else if (vm.Type == SlotType.Экскурсия)
-                {
-                    slotExists = _context.ExcursionSlots
-                        .Any(s => s.MuseumId == vm.SelectedEventId &&
-                                  s.SlotDate == date &&
-                                  s.TimeRange == timeRange);
-
-                    if (!slotExists)
+                    else if (vm.Type == SlotType.Экскурсия)
                     {
                         var slot = new ExcursionSlot
                         {
@@ -139,71 +145,26 @@ namespace DP.Controllers
                         };
                         _context.ExcursionSlots.Add(slot);
                     }
+
+                    _context.SaveChanges();
+
+                    TempData["Success"] = "Слот успешно добавлен!";
+                    return RedirectToAction("AddSchedule");
                 }
                 else
                 {
-                    ModelState.AddModelError("", "Неизвестный тип слота");
-                    return View(vm);
-                }
-
-                if (slotExists)
-                {
                     ModelState.AddModelError("", "Слот на это время уже существует");
-                    return View(vm);
                 }
-
-                _context.SaveChanges();
-                TempData["Success"] = "Слот успешно добавлен!";
-                return RedirectToAction("AddSchedule");
             }
             catch (Exception ex)
             {
+                // Детальное логирование ошибки
                 _logger.LogError(ex, "Ошибка при сохранении слота");
-                ModelState.AddModelError("", "Произошла ошибка при сохранении. Пожалуйста, попробуйте снова.");
-                return View(vm);
+                ModelState.AddModelError("", $"Ошибка: {ex.InnerException?.Message ?? ex.Message}");
             }
+
+            return View(vm);
         }
-
-        //[HttpGet]
-        //public IActionResult GetExistingSlots(int type, int? eventId, string dateStr)
-        //{
-        //    try
-        //    {
-        //        if (eventId == null || eventId == 0)
-        //            return Json(new { error = "Не выбрано мероприятие" });
-
-        //        if (!DateTime.TryParse(dateStr, out DateTime date))
-        //            return Json(new { error = "Неверный формат даты" });
-
-        //        List<string> slots = new List<string>();
-
-        //        if (type == (int)SlotType.Профпроба)
-        //        {
-        //            slots = _context.AvailableSlots
-        //                .Where(s => s.ProfProbaId == eventId && s.SlotDate == date.Date)
-        //                .Select(s => s.TimeRange)
-        //                .ToList();
-        //        }
-        //        else if (type == (int)SlotType.Экскурсия)
-        //        {
-        //            slots = _context.ExcursionSlots
-        //                .Where(s => s.MuseumId == eventId && s.SlotDate == date.Date)
-        //                .Select(s => s.TimeRange)
-        //                .ToList();
-        //        }
-        //        else
-        //        {
-        //            return Json(new { error = "Неизвестный тип слота" });
-        //        }
-
-        //        return Json(new { slots = slots });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Ошибка в GetExistingSlots");
-        //        return Json(new { error = $"Ошибка сервера: {ex.Message}" });
-        //    }
-        //}
 
         [HttpGet]
         public IActionResult ManageProfProby()
@@ -315,7 +276,7 @@ namespace DP.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> DeleteEvent(int id) 
+        public async Task<IActionResult> DeleteEvent(int id)
         {
             try
             {
@@ -339,7 +300,7 @@ namespace DP.Controllers
 
             return RedirectToAction("ManageProfProby");
         }
-        
+
 
         [HttpGet]
         public IActionResult EditExcursion(int id)
@@ -408,7 +369,7 @@ namespace DP.Controllers
         public IActionResult Delete(int id)
         {
             var booking = _context.Bookings
-                .Include(b => b.Files) 
+                .Include(b => b.Files)
                 .FirstOrDefault(b => b.ID == id);
 
             if (booking != null)
@@ -433,7 +394,7 @@ namespace DP.Controllers
         public IActionResult DeleteExcursion(int id)
         {
             var excursion = _context.ExcursionBookings
-                .Include(e => e.Files) 
+                .Include(e => e.Files)
                 .FirstOrDefault(e => e.Id == id);
 
             if (excursion != null)
@@ -516,7 +477,7 @@ namespace DP.Controllers
             ModelState.AddModelError("", "Неверный логин или пароль");
             return View();
         }
-       
+
         [HttpGet]
         public IActionResult UpdateFinalBooking(int id)
         {
@@ -654,7 +615,7 @@ namespace DP.Controllers
             {
                 Bookings = _context.Bookings.Include(b => b.Files).ToList(),
                 Excursions = _context.ExcursionBookings.Include(e => e.Files).ToList(),
-                
+
             };
             ViewBag.Bookings = bookings;
             ViewBag.Excursions = excursions;
@@ -682,7 +643,7 @@ namespace DP.Controllers
 
             if (file == null)
             {
-                return View(); 
+                return View();
             }
 
             return File(file.Content, System.Net.Mime.MediaTypeNames.Application.Octet, file.FileName);
