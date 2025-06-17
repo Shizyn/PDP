@@ -8,7 +8,7 @@ namespace DP.Database
         public DPContext(DbContextOptions<DPContext> options) : base(options) { }
 
         public DbSet<User> Users { get; set; }
-
+        public DbSet<Feedback> Feedbacks { get; set; }
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<Event> Events { get; set; }
         public DbSet<ProfProba> ProfProby { get; set; }

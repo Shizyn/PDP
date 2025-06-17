@@ -48,14 +48,19 @@ namespace DP.Controllers
                 .Include(b => b.Files)
                 .Include(b => b.User)
                 .ToList();
-            ViewBag.Bookings = bookings;
-           
+
             var excursionBookings = _context.ExcursionBookings
-            .Where(e => e.UserId == user.UserId)
-            .Include(e => e.Museum)
-            .Include(e => e.Files)
-            .Include(b => b.User)
-            .ToList();
+                .Where(e => e.UserId == user.UserId)
+                .Include(e => e.Museum)
+                .Include(e => e.Files)
+                .Include(b => b.User)
+                .ToList();
+
+            var feedbacks = _context.Feedbacks
+                .Where(f => f.UserId == user.UserId)
+                .ToList();
+
+            ViewBag.Feedbacks = feedbacks;
             ViewBag.Excursions = excursionBookings;
 
             return View(bookings);
@@ -365,7 +370,45 @@ namespace DP.Controllers
             }
         }
 
+        [HttpGet]
+        public IActionResult CreateFeedback(int bookingId, string type)
+        {
+            ViewBag.BookingId = bookingId;
+            ViewBag.Type = type; // "prof" или "excursion"
+            return View();
+        }
 
+        [HttpPost]
+        public async Task<IActionResult> CreateFeedback(int bookingId, string type, int rating, string text)
+        {
+            var userEmail = HttpContext.Session.GetString("UserEmail");
+            var user = _context.Users.FirstOrDefault(u => u.Email == userEmail);
+
+            if (user == null)
+                return RedirectToAction("Login", "Home");
+
+            var feedback = new Feedback
+            {
+                Rating = rating,
+                Text = text,
+                UserId = user.UserId,
+                CreatedAt = DateTime.Now
+            };
+
+            if (type == "prof")
+            {
+                feedback.BookingId = bookingId;
+            }
+            else if (type == "excursion")
+            {
+                feedback.ExcursionBookingId = bookingId;
+            }
+
+            _context.Feedbacks.Add(feedback);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Index");
+        }
         [HttpGet]
         public IActionResult DownloadExcelTemplate(string schoolName, int peopleCount)
         {

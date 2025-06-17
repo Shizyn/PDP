@@ -1,4 +1,5 @@
 ﻿@model IEnumerable<DP.Models.Booking>
+@using DP.Models
 
 <!DOCTYPE html>
 <html lang="ru">
@@ -20,49 +21,27 @@
             margin: 0 auto;
         }
 
-        h1.centered, h2.section-title {
+        h1.centered {
             color: #0056b3;
             text-align: center;
             margin: 25px 0;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed; 
-            margin: 20px 0;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            table-layout: auto;
-        }
-
-        th, td {
-            padding: 12px 15px;
-            width: auto;
-            text-align: center;
-            word-wrap: break-word;
-            border: 1px solid #e0e0e0;
-        }
-
-            th:nth-child(1), td:nth-child(1) {
-                min-width: 150px;
-            }
-            th:nth-child(2), td:nth-child(2) {
-                min-width: 120px;
-            }
-            th:nth-child(9), td:nth-child(9) {
-                min-width: 150px;
-            }
-        th {
-            background-color: #0056b3;
-            color: white;
+            font-size: 28px;
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #d52b1e;
+            padding-bottom: 10px;
+            display: inline-block;
         }
 
-        tr:nth-child(even) {
-            background-color: #f8f9fa;
+        h2.section-title {
+            color: #0056b3;
+            font-size: 22px;
+            font-weight: 500;
+            margin-top: 40px;
+            text-align: left;
+            padding-left: 15px;
+            border-left: 4px solid #0056b3;
         }
 
         .button-container {
@@ -74,37 +53,27 @@
             margin: 30px 0;
         }
 
-        .center-button {
+        .center-button, .btn {
             background-color: #d52b1e;
             color: white;
-            padding: 12px 20px;
+            padding: 12px 25px;
             border-radius: 5px;
             text-decoration: none;
             font-weight: 500;
             transition: background-color 0.3s;
-            border: none;
-            cursor: pointer;
             text-align: center;
             min-width: 200px;
+            border: none;
+            cursor: pointer;
         }
 
-            .center-button:hover {
-                background-color: #b82217;
-            }
-
-        .btn {
-            background-color: #0056b3;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: background-color 0.3s;
+        .btn-secondary {
+            background-color: #6c757d;
         }
 
-            .btn:hover {
-                background-color: #003d82;
-            }
+        .center-button:hover, .btn:hover {
+            opacity: 0.9;
+        }
 
         .booking {
             margin: 30px auto;
@@ -127,61 +96,176 @@
             border: 1px solid #f5c6cb;
         }
 
-        tr[style*="background-color:#f2f2f2"] td {
+        .request-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .request-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .request-title {
+            font-weight: bold;
+            color: #0056b3;
+        }
+
+        .request-status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status-new {
+            background-color: #f2f2f2;
             color: #333;
         }
 
-        tr[style*="background-color:#c1ffa55e"] td {
+        .status-confirmed {
+            background-color: #c1ffa55e;
             color: #2a6817;
         }
 
-        tr[style*="background-color:#ffa5a557"] td {
+        .status-rejected {
+            background-color: #ffa5a557;
             color: #8b0000;
         }
 
-        a[href*="DownloadFile"] {
+        .status-completed {
+            background-color: #e6e6ff;
+            color: #4b0082;
+        }
+
+        .request-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            margin-bottom: 8px;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .detail-value {
+            font-size: 15px;
+        }
+
+        .files-container {
+            margin-top: 15px;
+        }
+
+        .file-link {
+            display: block;
+            margin-bottom: 5px;
             color: #0056b3;
             text-decoration: none;
             transition: color 0.2s;
         }
 
-            a[href*="DownloadFile"]:hover {
+            .file-link:hover {
                 color: #d52b1e;
                 text-decoration: underline;
             }
 
+        .feedback-section {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            flex: 0 0 300px;
+        }
+
+        .feedback-title {
+            font-weight: bold;
+            color: #0056b3;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .feedback-form {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .btn-submit {
+            background-color: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+            .btn-submit:hover {
+                background-color: #138496;
+            }
+
+        .feedback-content {
+            margin-top: 15px;
+        }
+
+        .feedback-rating {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .feedback-text {
+            line-height: 1.5;
+        }
+
         @@media (max-width: 768px) {
-            body {
-                padding: 15px;
-            }
-
-            table {
-                display: block;
-                overflow-x: auto;
-            }
-
-            th, td {
-                padding: 8px 10px;
-                font-size: 14px;
-            }
-
-            .button-container {
+            .request-container {
                 flex-direction: column;
-                gap: 10px;
+            }
+
+            .request-card, .feedback-section {
+                width: 100%;
+                min-width: unset;
             }
 
             .center-button, .btn {
                 width: 100%;
-                padding: 10px;
                 box-sizing: border-box;
-            }
-
-            h1.centered {
-                font-size: 24px;
-            }
-
-            h2.section-title {
-                font-size: 20px;
             }
         }
     </style>
@@ -192,178 +276,268 @@
         @if (Model != null && Model.Any())
         {
             <h2 class="section-title">Заявки на профпробы</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Профпроба</th>
-                        <th>ФИО</th>
-                        <th>Email</th>
-                        <th>Телефон</th>
-                        <th>Учебное заведение</th>
-                        <th>Кол-во чел</th>
-                        <th>Дата</th>
-                        <th>Время</th>
-                        <th>Файлы</th>
-                        <th>Статус</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var booking in Model)
-                    {
-                        <tr style="@(booking.Status == "Новое" ? "background-color:#f2f2f2;" : booking.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : booking.Status == "Отклонено" ? "background-color:#ffa5a557;" : "")">
-                            <td>@booking.ProfProba?.Name</td>
-                            <td>@booking.User?.FullName</td>
-                            <td>@booking.User?.Email</td>
-                            <td>@booking.User?.Phone</td>
-                            <td>@booking.SchoolName</td>
-                            <td>@booking.PeopleCount</td>
-                            <td>@booking.BookingDate.ToString("dd.MM.yyyy")</td>
-                            <td>@booking.TimeRange</td>
-                            <td>
-                                @if (booking.Files != null && booking.Files.Any())
-                                {
-                                    foreach (var file in booking.Files)
-                                    {
-                                        <div>
-                                            <a class="download-link"
-                                               href="@Url.Action("DownloadFile", "Booking", new { id = file.Id })">
-                                                @file.FileName
-                                            </a>
-                                        </div>
-                                    }
-                                }
-                                else
-                                {
-                                    <span>—</span>
-                                }
-                            </td>
-                            <td>@booking.Status</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        }
 
-        <!-- Заявки на экскурсии -->
-        @if (ViewBag.Excursions != null && (ViewBag.Excursions as List<DP.Models.ExcursionBooking>).Any())
-        {
-            <h2 class="section-title">Заявки на экскурсии</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Музей</th>
-                        <th>ФИО</th>
-                        <th>Email</th>
-                        <th>Телефон</th>
-                        <th>Учебное заведение</th>
-                        <th>Кол-во чел</th>
-                        <th>Дата</th>
-                        <th>Время</th>
-                        <th>Файл</th>
-                        <th>Статус</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var excursion in ViewBag.Excursions as List<DP.Models.ExcursionBooking>)
+            @foreach (var booking in Model)
+            {
+                Feedback feedback = null;
+                if (ViewBag.Feedbacks != null)
+                {
+                    foreach (var f in ViewBag.Feedbacks as List<Feedback>)
                     {
-                        <tr style="@(excursion.Status == "Новое" ? "background-color:#f2f2f2;" : excursion.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : excursion.Status == "Отклонено" ? "background-color:#ffa5a557;" : "")">
-                            <td>@excursion.Museum?.Name</td>
-                            <td>@excursion.User?.FullName</td>
-                            <td>@excursion.User?.Email</td>
-                            <td>@excursion.User?.Phone</td>
-                            <td>@excursion.SchoolName</td>
-                            <td>@excursion.PeopleCount</td>
-                            <td>@excursion.BookingDate.ToShortDateString()</td>
-                            <td>@excursion.TimeRange</td>
-                            <td>
-                                @if (excursion.Files != null && excursion.Files.Any())
-                                {
-                                    foreach (var file in excursion.Files)
-                                    {
-                                        <div>
-                                            <a class="download-link"
-                                               href="@Url.Action("DownloadExcursionFile", "Booking", new { id = file.Id })">
-                                                @file.FileName
-                                            </a>
-                                        </div>
-                                    }
-                                }
-                                else
-                                {
-                                    <span>—</span>
-                                }
-                            </td>
-                            <td>@excursion.Status</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        }
-
-        @* <!-- Окончательные заявки -->
-        <h2>Окончательные заявки</h2>
-        @if (Model != null && Model.Any(b => b.Files != null && b.Files.Any()))
-        {
-            <table>
-                <thead>
-                    <tr>
-                        <th>Дата</th>
-                        <th>Почта</th>
-                        <th>ФИО</th>
-                        <th>Файлы</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var booking in Model)
-                    {
-                        if (booking.Files != null && booking.Files.Any())
+                        if (f.BookingId == booking.ID)
                         {
-                            <tr>
-                                <td>@booking.BookingDate.ToString("dd.MM.yyyy")</td>
-                                <td>@booking.Email</td>
-                                <td>@booking.FullName</td>
-                                <td>
-                                    @foreach (var file in booking.Files)
-                                    {
-                                        <a href="@Url.Action("DownloadFile", new { id = file.Id })">@file.FileName</a>
-
-                                        <br />
-                                    }
-                                </td>
-                            </tr>
+                            feedback = f;
+                            break;
                         }
                     }
-                </tbody>
-            </table>
+                }
+
+                <div class="request-container">
+                    <div class="request-card">
+                        <div class="request-header">
+                            <div class="request-title">@booking.ProfProba?.Name</div>
+                            <div class="request-status @GetStatusClass(booking.Status)">@booking.Status</div>
+                        </div>
+
+                        <div class="request-details">
+                            <div class="detail-item">
+                                <div class="detail-label">ФИО</div>
+                                <div class="detail-value">@booking.User?.FullName</div>
+                            </div>
+
+                            <div class="detail-item">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value">@booking.User?.Email</div>
+                            </div>
+
+                            <div class="detail-item">
+                                <div class="detail-label">Телефон</div>
+                                <div class="detail-value">@booking.User?.Phone</div>
+                            </div>
+
+                            <div class="detail-item">
+                                <div class="detail-label">Учебное заведение</div>
+                                <div class="detail-value">@booking.SchoolName</div>
+                            </div>
+
+                            <div class="detail-item">
+                                <div class="detail-label">Кол-во человек</div>
+                                <div class="detail-value">@booking.PeopleCount</div>
+                            </div>
+
+                            <div class="detail-item">
+                                <div class="detail-label">Дата</div>
+                                <div class="detail-value">@booking.BookingDate.ToString("dd.MM.yyyy")</div>
+                            </div>
+
+                            <div class="detail-item">
+                                <div class="detail-label">Время</div>
+                                <div class="detail-value">@booking.TimeRange</div>
+                            </div>
+                        </div>
+
+                        @if (booking.Files != null && booking.Files.Any())
+                        {
+                            <div class="files-container">
+                                <div class="detail-label">Файлы:</div>
+                                @foreach (var file in booking.Files)
+                                {
+                                    <a class="file-link" href="@Url.Action("DownloadFile", "Booking", new { id = file.Id })">
+                                        @file.FileName
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <div class="feedback-section">
+                        <div class="feedback-title">Отзыв</div>
+
+                        @if (booking.Status == "Завершено")
+                        {
+                            if (feedback == null)
+                            {
+                                <div class="feedback-form">
+                                    <form method="post" action="@Url.Action("CreateFeedback", "Booking")">
+                                        <input type="hidden" name="bookingId" value="@booking.ID" />
+                                        <input type="hidden" name="type" value="prof" />
+
+                                        <div class="form-group">
+                                            <label>Оценка (1-5)</label>
+                                            <input type="number" name="rating" min="1" max="5" class="form-control" required />
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label>Текст отзыва</label>
+                                            <textarea name="text" class="form-control" rows="4" required></textarea>
+                                        </div>
+
+                                        <button type="submit" class="btn-submit">Отправить отзыв</button>
+                                    </form>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="feedback-content">
+                                    <div class="feedback-rating">Оценка: @feedback.Rating/5</div>
+                                    <div class="feedback-text">@feedback.Text</div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p>Отзыв доступен после завершения мероприятия</p>
+                        }
+                    </div>
+                </div>
+            }
         }
-        else
+
+        @if (ViewBag.Excursions != null && (ViewBag.Excursions as List<ExcursionBooking>).Any())
         {
-            <p class="booking">Нет окончательных заявок</p>
-        } *@
+            <h2 class="section-title">Заявки на экскурсии</h2>
+
+            @foreach (var excursion in ViewBag.Excursions as List<ExcursionBooking>)
+            {
+                Feedback feedback = null;
+                if (ViewBag.Feedbacks != null)
+                {
+                    foreach (var f in ViewBag.Feedbacks as List<Feedback>)
+                    {
+                        if (f.ExcursionBookingId == excursion.Id)
+                        {
+                            feedback = f;
+                            break;
+                        }
+                    }
+                }
+
+                <div class="request-container">
+                    <div class="request-card">
+                        <div class="request-header">
+                            <div class="request-title">@excursion.Museum?.Name</div>
+                            <div class="request-status @GetStatusClass(excursion.Status)">@excursion.Status</div>
+                        </div>
+
+                        <div class="request-details">
+                            <div class="detail-item">
+                                <div class="detail-label">ФИО</div>
+                                <div class="detail-value">@excursion.User?.FullName</div>
+                            </div>
+
+                            <div class="detail-item">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value">@excursion.User?.Email</div>
+                            </div>
+
+                            <div class="detail-item">
+                                <div class="detail-label">Телефон</div>
+                                <div class="detail-value">@excursion.User?.Phone</div>
+                            </div>
+
+                            <div class="detail-item">
+                                <div class="detail-label">Учебное заведение</div>
+                                <div class="detail-value">@excursion.SchoolName</div>
+                            </div>
+
+                            <div class="detail-item">
+                                <div class="detail-label">Кол-во человек</div>
+                                <div class="detail-value">@excursion.PeopleCount</div>
+                            </div>
+
+                            <div class="detail-item">
+                                <div class="detail-label">Дата</div>
+                                <div class="detail-value">@excursion.BookingDate.ToShortDateString()</div>
+                            </div>
+
+                            <div class="detail-item">
+                                <div class="detail-label">Время</div>
+                                <div class="detail-value">@excursion.TimeRange</div>
+                            </div>
+                        </div>
+
+                        @if (excursion.Files != null && excursion.Files.Any())
+                        {
+                            <div class="files-container">
+                                <div class="detail-label">Файлы:</div>
+                                @foreach (var file in excursion.Files)
+                                {
+                                    <a class="file-link" href="@Url.Action("DownloadExcursionFile", "Booking", new { id = file.Id })">
+                                        @file.FileName
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <div class="feedback-section">
+                        <div class="feedback-title">Отзыв</div>
+
+                        @if (excursion.Status == "Завершено")
+                        {
+                            if (feedback == null)
+                            {
+                                <div class="feedback-form">
+                                    <form method="post" action="@Url.Action("CreateFeedback", "Booking")">
+                                        <input type="hidden" name="bookingId" value="@excursion.Id" />
+                                        <input type="hidden" name="type" value="excursion" />
+
+                                        <div class="form-group">
+                                            <label>Оценка (1-5)</label>
+                                            <input type="number" name="rating" min="1" max="5" class="form-control" required />
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label>Текст отзыва</label>
+                                            <textarea name="text" class="form-control" rows="4" required></textarea>
+                                        </div>
+
+                                        <button type="submit" class="btn-submit">Отправить отзыв</button>
+                                    </form>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="feedback-content">
+                                    <div class="feedback-rating">Оценка: @feedback.Rating/5</div>
+                                    <div class="feedback-text">@feedback.Text</div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p>Отзыв доступен после завершения мероприятия</p>
+                        }
+                    </div>
+                </div>
+            }
+        }
 
         @if ((Model == null || !Model.Any()) &&
-        (ViewBag.Excursions == null || !(ViewBag.Excursions as List<DP.Models.ExcursionBooking>).Any()))
+        (ViewBag.Excursions == null || !(ViewBag.Excursions as List<ExcursionBooking>).Any()))
         {
             <p class="booking">Заявки не найдены</p>
-        }
-
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div class="alert">
-                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                {
-                    <p>@error.ErrorMessage</p>
-                }
-            </div>
         }
 
         <div class="button-container">
             <a class="center-button" href="/Booking/Create?eventType=MasterClass">Добавить заявку на проф пробы</a>
             <a class="center-button" href="/Booking/ExcursionCreate">Добавить заявку на экскурсию</a>
-            @* <a class="center-button" href="/Booking/CreateFinalBooking">Добавить окончательную заявку</a> *@
-            <a href="/" class="btn btn-secondary">Вернуться на главную</a>
+            <a href="/Home/Index" class="btn btn-secondary">Вернуться на главную</a>
         </div>
     </div>
+
+    @functions {
+        string GetStatusClass(string status)
+        {
+            switch (status)
+            {
+                case "Новое": return "status-new";
+                case "Подтверждено": return "status-confirmed";
+                case "Отклонено": return "status-rejected";
+                case "Завершено": return "status-completed";
+                default: return "";
+            }
+        }
+    }
 </body>
 </html>
-

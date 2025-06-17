@@ -1,4 +1,5 @@
-﻿@model DP.Controllers.AdminController.AdminDashboardViewModel
+﻿@model DP.Models.AdminDashboardViewModel
+﻿@using DP.Models
 
 
 <!DOCTYPE html>
@@ -95,6 +96,7 @@
             background-color: #e9f0ff;
         }
 
+        
         td button, .btn {
             padding: 8px 12px;
             border-radius: 4px;
@@ -107,6 +109,24 @@
             min-width: 100px;
         }
 
+        .btn-complete {
+            background-color: #9370DB;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 3px;
+            font-weight: 500;
+            min-width: 100px;
+        }
+
+            .btn-complete:hover {
+                background-color: #7B68EE;
+                opacity: 0.9;
+                transform: translateY(-1px);
+            }
         .btn-success {
             background-color: #28a745;
             color: white;
@@ -136,7 +156,27 @@
             border-radius: 4px;
             margin: 3px;
         }
-
+        .feedback-table {
+            margin-top: 40px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feedback-table th {
+            background-color: #6a0dad;
+            color: white;
+        }
+        
+        .feedback-rating {
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .feedback-text {
+            max-width: 500px;
+            word-wrap: break-word;
+        }
         td button:hover, .btn:hover {
             opacity: 0.9;
             transform: translateY(-1px);
@@ -165,6 +205,9 @@
             color: #8b0000;
         }
 
+        tr[style*="background-color:#e6e6ff"] td {
+            color: #4b0082;
+        }
         .admin-header {
             display: flex;
             justify-content: space-between;
@@ -244,7 +287,10 @@
             <tbody>
                 @foreach (var booking in Model.Bookings)
                 {
-                    <tr style="@(booking.Status == "Новое" ? "background-color:#f2f2f2;" : booking.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : booking.Status == "Отклонено" ? "background-color:#ffa5a557;" : "")">
+                    <tr style="@(booking.Status == "Новое" ? "background-color:#f2f2f2;" :
+            booking.Status == "Подтверждено" ? "background-color:#c1ffa55e;" :
+            booking.Status == "Отклонено" ? "background-color:#ffa5a557;" :
+            booking.Status == "Завершено" ? "background-color:#e6e6ff;" : "")">
                         <td>@booking.ProfProba?.Name</td>
                         <td>@booking.User?.FullName</td>
                         <td>@booking.User?.Email</td>
@@ -283,17 +329,14 @@
                                     <input type="hidden" name="id" value="@booking.ID" />
                                     <button type="submit">Отклонить</button>
                                 </form>
-                                @* <form method="get" action="/Admin/Update">
-                                    <input type="hidden" name="id" value="@booking.ID" />
-                                    <button type="submit">Редактировать</button>
-                                </form> *@
+                                
                             }
                             @if (booking.Status == "Подтверждено")
                             {
-                                @* <form method="get" action="/Admin/Update">
+                                <form method="post" action="/Admin/CompleteBooking">
                                     <input type="hidden" name="id" value="@booking.ID" />
-                                    <button type="submit">Редактировать</button>
-                                </form> *@
+                                    <button type="submit" class="btn-complete">Завершить</button>
+                                </form>
                             }
                             <form method="post" action="/Admin/Delete">
                                 <input type="hidden" name="id" value="@booking.ID" />
@@ -331,7 +374,10 @@
             <tbody>
                 @foreach (var excursion in Model.Excursions)
                 {
-                    <tr style="@(excursion.Status == "Новое" ? "background-color:#f2f2f2;" : excursion.Status == "Подтверждено" ? "background-color:#c1ffa55e;" : excursion.Status == "Отклонено" ? "background-color:#ffa5a557;" : "")">
+                    <tr style="@(excursion.Status == "Новое" ? "background-color:#f2f2f2;" :
+            excursion.Status == "Подтверждено" ? "background-color:#c1ffa55e;" :
+            excursion.Status == "Отклонено" ? "background-color:#ffa5a557;" :
+            excursion.Status == "Завершено" ? "background-color:#e6e6ff;" : "")">
                         <td>@excursion.Museum?.Name</td>
                         <td>@excursion.User?.FullName</td>
                         <td>@excursion.User?.Email</td>
@@ -370,17 +416,14 @@
                                     <input type="hidden" name="id" value="@excursion.Id" />
                                     <button type="submit">Отклонить</button>
                                 </form>
-                                @* <form method="get" action="/Admin/EditExcursion">
-                                    <input type="hidden" name="id" value="@excursion.Id" />
-                                    <button type="submit">Редактировать</button>
-                                </form> *@
+                                
                             }
                             @if (excursion.Status == "Подтверждено")
                             {
-                                @* <form method="get" action="/Admin/EditExcursion">
+                                <form method="post" action="/Admin/CompleteExcursion">
                                     <input type="hidden" name="id" value="@excursion.Id" />
-                                    <button type="submit">Редактировать</button>
-                                </form> *@
+                                    <button type="submit" class="btn-complete">Завершить</button>
+                                </form>
                             }
                             <form method="post" action="/Admin/DeleteExcursion">
                                 <input type="hidden" name="id" value="@excursion.Id" />
@@ -394,6 +437,57 @@
                 }
             </tbody>
         </table>
+    }
+    @if (Model.Feedbacks != null && Model.Feedbacks.Any())
+    {
+        <h2>Отзывы пользователей</h2>
+        <table class="feedback-table">
+            <thead>
+                <tr>
+                    <th>Тип</th>
+                    <th>Мероприятие</th>
+                    <th>Пользователь</th>
+                    <th>Оценка</th>
+                    <th>Отзыв</th>
+                    <th>Дата</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var feedback in Model.Feedbacks)
+                {
+                    <tr>
+                        <td>
+                            @if (feedback.BookingId != null)
+                            {
+                                <span>Профпроба</span>
+                            }
+                            else if (feedback.ExcursionBookingId != null)
+                            {
+                                <span>Экскурсия</span>
+                            }
+                        </td>
+                        <td>
+                            @if (feedback.BookingId != null)
+                            {
+                                @feedback.Booking?.ProfProba?.Name
+                            }
+                            else if (feedback.ExcursionBookingId != null)
+                            {
+                                @feedback.ExcursionBooking?.Museum?.Name
+                            }
+                        </td>
+                        <td>@feedback.User?.FullName</td>
+                        <td class="feedback-rating">@feedback.Rating/5</td>
+                        <td class="feedback-text">@feedback.Text</td>
+                        <td>@feedback.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="booking">Нет отзывов</div>
     }
     <!-- Окончательные заявки -->
     @* <h2>Окончательные заявки (с прикрепленными файлами)</h2>

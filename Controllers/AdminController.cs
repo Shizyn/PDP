@@ -20,12 +20,13 @@ namespace DP.Controllers
             _context = context;
             _logger = logger;
         }
-        public class AdminDashboardViewModel
-        {
-            public List<Booking> Bookings { get; set; }
-            public List<ExcursionBooking> Excursions { get; set; }
-            public List<Booking> FinalBookings { get; set; }
-        }
+        //public class AdminDashboardViewModel
+        //{
+        //    public List<Booking> Bookings { get; set; }
+        //    public List<ExcursionBooking> Excursions { get; set; }
+        //    public List<Booking> FinalBookings { get; set; }
+        //    public List<Feedback> Feedbacks { get; set; }
+        //}
         public IActionResult Index()
         {
             if (HttpContext.Session.GetString("IsAdmin") != "true")
@@ -37,10 +38,19 @@ namespace DP.Controllers
 
                 .ToList();
 
+            var feedbacks = _context.Feedbacks
+        .Include(f => f.Booking)
+            .ThenInclude(b => b.ProfProba)
+        .Include(f => f.ExcursionBooking)
+            .ThenInclude(e => e.Museum)
+        .Include(f => f.User)
+        .ToList();
+
             var viewModel = new AdminDashboardViewModel
             {
                 Bookings = GetBookings(),
                 Excursions = GetExcursionBookings(),
+                Feedbacks = feedbacks // Используем новое свойство
             };
 
             return View(viewModel);
@@ -507,7 +517,29 @@ namespace DP.Controllers
 
             return View(booking);
         }
+        [HttpPost]
+        public IActionResult CompleteBooking(int id)
+        {
+            var booking = _context.Bookings.FirstOrDefault(b => b.ID == id);
+            if (booking != null && booking.Status == "Подтверждено")
+            {
+                booking.Status = "Завершено"; // Используем единый статус
+                _context.SaveChanges();
+            }
+            return RedirectToAction("Index");
+        }
 
+        [HttpPost]
+        public IActionResult CompleteExcursion(int id)
+        {
+            var excursion = _context.ExcursionBookings.FirstOrDefault(e => e.Id == id);
+            if (excursion != null && excursion.Status == "Подтверждено")
+            {
+                excursion.Status = "Завершено"; // Используем единый статус
+                _context.SaveChanges();
+            }
+            return RedirectToAction("Index");
+        }
         [HttpGet]
         public IActionResult GetEventsByProfProba(int profProbaId)
         {
