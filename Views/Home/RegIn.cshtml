@@ -217,8 +217,10 @@
                         required: true,
                         email: true
                     },
-                    Password: {
-                        required: true
+                            Password: {
+                        required: true,
+                        minlength: 6,
+                        strongPassword: true
                     }
                 },
                 messages: {
@@ -233,8 +235,9 @@
                         required: "Email обязателен для заполнения",
                         email: "Введите корректный email"
                     },
-                    Password: {
-                        required: "Пароль обязателен для заполнения"
+                            Password: {
+                        required: "Пароль обязателен для заполнения",
+                        minlength: "Пароль должен быть не менее 6 символов"
                     }
                 },
                 errorPlacement: function (error, element) {

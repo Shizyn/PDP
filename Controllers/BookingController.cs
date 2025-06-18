@@ -410,57 +410,126 @@ namespace DP.Controllers
             return RedirectToAction("Index");
         }
         [HttpGet]
-        public IActionResult DownloadExcelTemplate(string schoolName, int peopleCount)
+        public IActionResult DownloadExcelTemplate(string schoolName, int peopleCount, DateTime bookingDate, string timeRange, string eventName)
         {
+            // Получаем данные текущего пользователя
+            var userEmail = HttpContext.Session.GetString("UserEmail");
+            var user = _context.Users.FirstOrDefault(u => u.Email == userEmail);
+
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
             var package = new ExcelPackage();
             var worksheet = package.Workbook.Worksheets.Add("Список участников");
 
-            // Заголовок с названием школы
-            worksheet.Cells[1, 1].Value = $"Список участников {schoolName}";
-            using (ExcelRange range = worksheet.Cells[1, 1, 1, 8]) // Объединяем 8 ячеек
+            int rowIndex = 1;
+
+            // Шапка с основной информацией о мероприятии
+            worksheet.Cells[rowIndex, 1].Value = $"Информация о мероприятии";
+            worksheet.Cells[rowIndex, 1].Style.Font.Bold = true;
+            worksheet.Cells[rowIndex, 1].Style.Font.Size = 16;
+            rowIndex += 2;
+
+            worksheet.Cells[rowIndex, 1].Value = "Мероприятие:";
+            worksheet.Cells[rowIndex, 2].Value = eventName; // Ячейка B2
+            rowIndex++;
+            // Добавляем информацию о дате и времени
+            worksheet.Cells[rowIndex, 1].Value = "Дата проведения:";
+            worksheet.Cells[rowIndex, 2].Value = bookingDate.ToString("dd.MM.yyyy");
+            rowIndex++;
+
+            worksheet.Cells[rowIndex, 1].Value = "Время проведения:";
+            worksheet.Cells[rowIndex, 2].Value = timeRange;
+            rowIndex++;
+
+            worksheet.Cells[rowIndex, 1].Value = "Учебное заведение:";
+            worksheet.Cells[rowIndex, 2].Value = schoolName;
+            rowIndex += 2; // Дополнительный отступ
+
+            // Контактная информация организатора
+            worksheet.Cells[rowIndex, 1].Value = "Контактная информация ответственного лица:";
+            worksheet.Cells[rowIndex, 1].Style.Font.Bold = true;
+            rowIndex++;
+
+            if (user != null)
+            {
+                worksheet.Cells[rowIndex, 1].Value = "ФИО:";
+                worksheet.Cells[rowIndex, 2].Value = user.FullName ?? "ФИО не указано";
+                rowIndex++;
+
+
+                worksheet.Cells[rowIndex, 1].Value = "Телефон:";
+                worksheet.Cells[rowIndex, 2].Value = user.Phone ?? "Телефон не указан";
+                rowIndex++;
+
+                worksheet.Cells[rowIndex, 1].Value = "Email:";
+                worksheet.Cells[rowIndex, 2].Value = user.Email ?? "Email не указан";
+                rowIndex++;
+            }
+            else
+            {
+                worksheet.Cells[rowIndex, 1].Value = "Данные пользователя не найдены";
+                rowIndex++;
+            }
+
+            rowIndex++; // Дополнительный отступ
+
+            // Заголовок списка участников
+            worksheet.Cells[rowIndex, 1].Value = $"Список участников ({peopleCount} человек)";
+            using (ExcelRange range = worksheet.Cells[rowIndex, 1, rowIndex, 8])
             {
                 range.Merge = true;
                 range.Style.Font.Bold = true;
                 range.Style.Font.Size = 14;
                 range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
             }
+            rowIndex++;
 
             // Заголовки для участников
-            worksheet.Cells[3, 1].Value = "№";
-            worksheet.Cells[3, 2].Value = "ФИО участника";
-            worksheet.Cells[3, 3].Value = "Дата рождения";
-            worksheet.Cells[3, 4].Value = "Школа, класс";
+            worksheet.Cells[rowIndex, 1].Value = "№";
+            worksheet.Cells[rowIndex, 2].Value = "ФИО участника";
+            worksheet.Cells[rowIndex, 3].Value = "Дата рождения";
+            worksheet.Cells[rowIndex, 4].Value = "Школа, класс";
 
-            // Заголовки для сопровождающих (справа)
-            worksheet.Cells[3, 6].Value = "№";
-            worksheet.Cells[3, 7].Value = "ФИО сопровождающего";
-            worksheet.Cells[3, 8].Value = "Должность";
+            // Заголовки для сопровождающих
+            worksheet.Cells[rowIndex, 6].Value = "№";
+            worksheet.Cells[rowIndex, 7].Value = "ФИО сопровождающего";
+            worksheet.Cells[rowIndex, 8].Value = "Должность";
 
             // Стили для заголовков
-            ApplyHeaderStyle(worksheet.Cells[3, 1, 3, 4]);
-            ApplyHeaderStyle(worksheet.Cells[3, 6, 3, 8]);
+            ApplyHeaderStyle(worksheet.Cells[rowIndex, 1, rowIndex, 4]);
+            ApplyHeaderStyle(worksheet.Cells[rowIndex, 6, rowIndex, 8]);
+            rowIndex++;
 
             // Заполнение участников
+            int participantsStartRow = rowIndex;
             for (int i = 1; i <= peopleCount; i++)
             {
-                int row = 3 + i;
-                worksheet.Cells[row, 1].Value = i;
+                worksheet.Cells[rowIndex, 1].Value = i;
+                rowIndex++;
             }
 
-            // Заполнение сопровождающих (фиксированные 4 строки)
+            // Заполнение сопровождающих
+            int escortsStartRow = participantsStartRow;
             for (int i = 1; i <= 4; i++)
             {
-                int row = 3 + i;
-                worksheet.Cells[row, 6].Value = i;
+                worksheet.Cells[escortsStartRow, 6].Value = i;
+
+                // Первый сопровождающий - текущий пользователь
+                if (i == 1 && user != null)
+                {
+                    worksheet.Cells[escortsStartRow, 7].Value = user.FullName ?? "ФИО не указано";
+                }
+                escortsStartRow++;
             }
 
             // Границы таблиц
-            ApplyTableStyle(worksheet.Cells[3, 1, 3 + peopleCount, 4]);
-            ApplyTableStyle(worksheet.Cells[3, 6, 3 + 4, 8]);
+            ApplyTableStyle(worksheet.Cells[participantsStartRow, 1, participantsStartRow + peopleCount - 1, 4]);
+            ApplyTableStyle(worksheet.Cells[participantsStartRow, 6, participantsStartRow + 3, 8]);
 
             // Автоподбор ширины
             worksheet.Cells.AutoFitColumns();
+
+            // Форматирование столбцов с датами
+            worksheet.Column(3).Style.Numberformat.Format = "dd.mm.yyyy";
 
             var stream = new MemoryStream();
             package.SaveAs(stream);
@@ -469,7 +538,7 @@ namespace DP.Controllers
             return File(
                 stream,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                $"Шаблон_{schoolName}.xlsx"
+                $"Список_участников_{schoolName}_{bookingDate:ddMMyyyy}.xlsx"
             );
         }
 

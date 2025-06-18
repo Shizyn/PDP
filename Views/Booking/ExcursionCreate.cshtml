@@ -3,12 +3,11 @@
 <head>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7-beta.19/jquery.inputmask.min.js"></script>
-    <link rel="stylesheet"
-          href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css" />
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css" />
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Создать новую заявку</title>
+    <title>Создать новую заявку на экскурсию</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -45,6 +44,17 @@
         .form-group {
             margin-bottom: 20px;
             text-align: left;
+        }
+
+        /* Увеличенный отступ после музея */
+        .museum-group {
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        /* Дополнительный отступ перед учебным заведением */
+        .school-group {
+            margin-top: 10px;
         }
 
         label {
@@ -125,6 +135,32 @@
                 margin: 5px 0;
             }
 
+        /* Стили для ошибок */
+        .field-validation-error {
+            color: #d52b1e;
+            font-size: 13px;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .file-section {
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .disabled-link {
+            color: #999;
+            cursor: not-allowed;
+            pointer-events: none;
+            text-decoration: none;
+        }
+
+        .template-section {
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
         @@media (max-width: 768px) {
             .booking-container {
                 padding: 25px 20px;
@@ -142,6 +178,10 @@
                 padding: 12px;
                 font-size: 15px;
             }
+
+            .museum-group {
+                margin-bottom: 25px;
+            }
         }
     </style>
 </head>
@@ -151,42 +191,36 @@
         <form id="bookingForm" method="post" enctype="multipart/form-data" class="form-container">
             <input type="hidden" name="eventType" value="@ViewBag.EventType" />
 
-            @* <div class="form-group">
-                <label for="fullName">ФИО заявителя:</label>
-                <input type="text" id="fullName" name="fullName" required placeholder="Введите ваше ФИО" />
+            <!-- Группа музея с увеличенным отступом -->
+            <div class="form-group museum-group">
+                <label for="museumSelect">Музей:</label>
+                <select id="museumSelect" name="MuseumId" required>
+                    <option value="">Выберите музей</option>
+                    @foreach (var museum in ViewBag.Museums)
+                    {
+                        <option value="@museum.Id">@museum.Name</option>
+                    }
+                </select>
+                <span id="museumError" class="field-validation-error" style="display:none;"></span>
             </div>
 
-            <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required placeholder="Введите ваш email" />
-            </div>
-
-            <div class="form-group">
-                <label for="phone">Телефон:</label>
-                <input type="tel" id="phone" name="phoneNumber" required placeholder="8(XXX)-XXX-XX-XX" />
-                <span id="phoneError" class="validation-error text-danger" style="display:none;font-size:13px;margin-top:5px;"></span>
-            </div> *@
-            <select id="museumSelect" name="MuseumId" required>
-                <option value="">Выберите музей</option>
-                @foreach (var museum in ViewBag.Museums)
-                {
-                    <option value="@museum.Id">@museum.Name</option>
-                }
-            </select>
-
-            <div class="form-group">
+            <!-- Группа учебного заведения с дополнительным отступом -->
+            <div class="form-group school-group">
                 <label for="schoolName">Учебное заведение:</label>
                 <input type="text" id="schoolName" name="schoolName" required placeholder="Введите название вашего учебного заведения" />
+                <span id="schoolError" class="field-validation-error" style="display:none;"></span>
             </div>
 
             <div class="form-group">
                 <label for="peopleCount">Количество человек:</label>
                 <input type="number" id="peopleCount" name="peopleCount" min="1" max="50" value="1" required />
+                <span id="countError" class="field-validation-error" style="display:none;"></span>
             </div>
 
             <div class="form-group">
                 <label for="BookingDate">Дата посещения:</label>
                 <input type="text" id="excursionBookingDate" name="bookingDate" placeholder="Выберите дату" readonly disabled />
+                <span id="dateError" class="field-validation-error" style="display:none;"></span>
             </div>
 
             <div class="form-group">
@@ -194,14 +228,19 @@
                 <select id="excursionTimeRange" name="timeRange" required disabled>
                     <option value="">Сначала выберите дату</option>
                 </select>
+                <span id="timeError" class="field-validation-error" style="display:none;"></span>
             </div>
 
-            <div class="form-group">
+            <div class="form-group template-section">
                 <label>Скачать шаблон списка участников (Excel):</label>
                 <a href="#" id="downloadTemplateLink">Скачать шаблон участников</a>
-                <input type="file" name="excelFile" accept=".xlsx,.xls" />
+                <div class="file-section">
+                    <label for="excelFile" style="display: block; margin-top: 10px; margin-bottom: 5px;">Загрузите заполненный файл:</label>
+                    <input type="file" id="excelFile" name="excelFile" accept=".xlsx,.xls" />
+                    <span id="fileError" class="field-validation-error" style="display:none;"></span>
+                </div>
             </div>
-            
+
             <button type="submit" class="btn-submit">Отправить заявку</button>
             <a href="/Booking" class="btn">Назад</a>
         </form>
@@ -217,28 +256,136 @@
         }
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7-beta.19/jquery.inputmask.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-	<script>
-		$(document).ready(function() {
-			function updateDownloadLink() {
-				const school = $("#schoolName").val() || "школа";
-				const count = $("#peopleCount").val() || 1;
-				const link = `@Url.Action("DownloadExcelTemplate", "Booking")?schoolName=${encodeURIComponent(school)}&peopleCount=${count}`;
-				$("#downloadTemplateLink").attr("href", link);
-			}
-
-			$("#schoolName, #peopleCount").on("input", updateDownloadLink);
-			updateDownloadLink();
-		});
-	</script>
     <script>
-                    $(function() {
+        $(document).ready(function() {
+            // Функция очистки ошибок
+            function clearErrors() {
+                $('.field-validation-error').each(function() {
+                    $(this).hide().text('');
+                });
+            }
+
+            // Обработчик изменения полей
+            $("input, select").on('input change', function() {
+                clearErrors();
+            });
+
+              function updateDownloadLink() {
+            const museum = $("#museumSelect").val();
+            const school = $("#schoolName").val();
+            const count = $("#peopleCount").val();
+
+            // Проверка только основных обязательных полей
+            if (!museum || !school || !count) {
+                $("#downloadTemplateLink")
+                    .addClass("disabled-link")
+                    .attr("href", "javascript:void(0)")
+                    .attr("title", "Заполните все обязательные поля");
+                return;
+            }
+
+            const date = $("#excursionBookingDate").val() || "";
+            const time = $("#excursionTimeRange").val() || "";
+            const eventName = $("#museumSelect option:selected").text() || "Мероприятие";
+
+            let link = `@Url.Action("DownloadExcelTemplate", "Booking")?schoolName=${encodeURIComponent(school)}&peopleCount=${count}&eventName=${encodeURIComponent(eventName)}`;
+
+            if (date) {
+                link += `&bookingDate=${encodeURIComponent(date)}`;
+            }
+            if (time) {
+                link += `&timeRange=${encodeURIComponent(time)}`;
+            }
+
+            $("#downloadTemplateLink")
+                .removeClass("disabled-link")
+                .attr("href", link)
+                .removeAttr("title");
+        }
+
+        // Подписываемся на изменения всех полей
+        $("#museumSelect, #schoolName, #peopleCount, #excursionBookingDate, #excursionTimeRange").on("input change", updateDownloadLink);
+        updateDownloadLink();
+
+        // Обработчик клика на ссылке скачивания (ИСПРАВЛЕННЫЙ)
+        $("#downloadTemplateLink").on("click", function(e) {
+            clearErrors();
+            let hasError = false;
+
+            // Проверяем только основные поля
+            const requiredFields = [
+                {id: "#museumSelect", name: "Музей", errorId: "#museumError"},
+                {id: "#schoolName", name: "Учебное заведение", errorId: "#schoolError"},
+                {id: "#peopleCount", name: "Количество человек", errorId: "#countError"}
+            ];
+
+            requiredFields.forEach(field => {
+                if (!$(field.id).val()) {
+                    let errorElement = $(field.errorId);
+                    errorElement.text(`Поле "${field.name}" обязательно`).show();
+                    hasError = true;
+                }
+            });
+
+            if (hasError) {
+                e.preventDefault();
+                const firstError = $('.field-validation-error:visible').first();
+                if (firstError.length) {
+                    $('html, body').animate({
+                        scrollTop: firstError.offset().top - 100
+                    }, 500);
+                }
+            }
+        });
+
+        // Обработчик отправки формы (ОСТАЕТСЯ ПОЛНАЯ ПРОВЕРКА)
+        $("#bookingForm").on("submit", function(e) {
+            clearErrors();
+            let hasError = false;
+            const requiredFields = [
+                {id: "#museumSelect", name: "Музей", errorId: "#museumError"},
+                {id: "#schoolName", name: "Учебное заведение", errorId: "#schoolError"},
+                {id: "#peopleCount", name: "Количество человек", errorId: "#countError"},
+                {id: "#excursionBookingDate", name: "Дата посещения", errorId: "#dateError"},
+                {id: "#excursionTimeRange", name: "Время начала", errorId: "#timeError"}
+            ];
+
+            requiredFields.forEach(field => {
+                if (!$(field.id).val()) {
+                    let errorElement = $(field.errorId);
+                    errorElement.text(`Поле "${field.name}" обязательно`).show();
+                    hasError = true;
+                }
+            });
+
+            const fileInput = $("input[name='excelFile']")[0];
+            if (!fileInput.files || fileInput.files.length === 0) {
+                $("#fileError")
+                    .text("Пожалуйста, загрузите файл Excel со списком участников")
+                    .show();
+                hasError = true;
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                const firstError = $('.field-validation-error:visible').first();
+                if (firstError.length) {
+                    $('html, body').animate({
+                        scrollTop: firstError.offset().top - 100
+                    }, 500);
+                }
+                return false;
+            }
+
+            return true;
+        });
+
+            // Функционал выбора даты и времени
             console.log("Document ready");
             let availableExcursionDates = [];
 
             $("#museumSelect").on("change", function() {
+                clearErrors();
                 const museumId = $(this).val();
                 console.log("Selected museum ID:", museumId);
 
@@ -273,7 +420,7 @@
                     })
                     .fail(function(jqXHR, textStatus, errorThrown) {
                         console.error("Dates load error:", textStatus, errorThrown);
-                        alert("Ошибка загрузки дат");
+                        $("#dateError").text("Ошибка загрузки доступных дат").show();
                     });
             });
 
@@ -290,36 +437,22 @@
                     let options = '<option value="">Выберите время</option>';
 
                     if (timeRanges.length === 0) {
-                        options += '<option value="">Нет доступных времён</option>';
+                        options = '<option value="">Нет доступных времён</option>';
                     } else {
                         timeRanges.forEach(range => {
                             options += `<option value="${range}">${range}</option>`;
                         });
                     }
 
-                    $("#excursionTimeRange").html(options);
+                    $("#excursionTimeRange").html(options).prop("disabled", false);
                 })
                 .fail(function(jqXHR, textStatus, errorThrown) {
                     console.error("Times load error:", textStatus, errorThrown);
-                    $("#excursionTimeRange").html('<option value="">Ошибка загрузки</option>');
-                })
-                .always(function() {
-                    $("#excursionTimeRange").prop("disabled", false);
+                    $("#excursionTimeRange").html('<option value="">Ошибка загрузки</option>').prop("disabled", false);
+                    $("#timeError").text("Ошибка загрузки доступных времён").show();
                 });
             }
         });
     </script>
-
-
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div class="alert">
-                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                {
-                    <p>@error.ErrorMessage</p>
-                }
-            </div>
-        }
-    </div>
 </body>
 </html>
