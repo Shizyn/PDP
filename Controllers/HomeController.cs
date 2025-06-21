@@ -41,7 +41,6 @@ namespace DP.Controllers
         {
             if (ModelState.IsValid)
             {
-                //сущ ли пользователь с таким email и паролем
                 var user = _context.Users
                     .FirstOrDefault(u => u.Email == model.Email && u.Password == model.Password);
 
@@ -49,13 +48,32 @@ namespace DP.Controllers
                 {
                     HttpContext.Session.SetString("UserEmail", user.Email);
 
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    {
+                        return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
+                    }
                     return RedirectToAction("Index", "Home");
                 }
                 else
                 {
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    {
+                        return Json(new { success = false, message = "Неверный email или пароль" });
+                    }
                     ModelState.AddModelError(string.Empty, "Неверный email или пароль");
                 }
             }
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                return Json(new { success = false, message = string.Join("<br>", errors) });
+            }
+
             return View(model);
         }
 

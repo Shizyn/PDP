@@ -96,9 +96,9 @@
             background-color: #f8d7da;
             color: #721c24;
             padding: 15px;
-            border: 1px solid #f5c6cb;
             border-radius: 4px;
             text-align: left;
+            border: 1px solid #f5c6cb;
             display: none;
             margin-top: 20px;
         }
@@ -107,41 +107,81 @@
 <body>
     <div class="login-container">
         <h1>Вход</h1>
-
         <p>Нет аккаунта? <a href="/home/regin" class="regin-link">Зарегистрироваться</a></p>
 
-        <form asp-action="Login" method="post" asp-antiforgery="true" class="login-form">
+        <form id="loginForm" asp-action="Login" method="post" class="login-form">
+            @Html.AntiForgeryToken()
+
             <div class="form-group">
-                <label asp-for="Email" class="form-label"></label>
-                <input asp-for="Email" class="form-input" name="Email" placeholder="Введите ваш email" />
-                <span asp-validation-for="Email" class="validation-error text-danger"></span>
+                <label for="Email" class="form-label">Email</label>
+                <input type="email" name="Email" id="Email" class="form-input" placeholder="Введите ваш email" />
+                <label id="Email-error" class="field-error" for="Email" style="display:none;"></label>
             </div>
 
             <div class="form-group">
-                <label asp-for="Password" class="form-label"></label>
-                <input asp-for="Password" type="password" class="form-input" name="Password" placeholder="Введите пароль" />
-                <span asp-validation-for="Password" class="validation-error text-danger"></span>
+                <label for="Password" class="form-label">Пароль</label>
+                <input type="password" name="Password" id="Password" class="form-input" placeholder="Введите пароль" />
+                <label id="Password-error" class="field-error" for="Password" style="display:none;"></label>
             </div>
 
             <button type="submit" class="btn-submit">Войти</button>
         </form>
+
+        <div id="result" class="alert" style="display:none;"></div>
     </div>
 
-    @section Scripts {
-        @{
-            await Html.RenderPartialAsync("_ValidationScriptsPartial");
-        }
-    }
-    @if (!ViewData.ModelState.IsValid)
-    {
-        <div class="alert alert-danger">
-            <ul>
-                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                {
-                    <li>@error.ErrorMessage</li>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $("#loginForm").validate({
+                rules: {
+                    Email: {
+                        required: true,
+                        email: true
+                    },
+                    Password: {
+                        required: true
+                    }
+                },
+                messages: {
+                    Email: {
+                        required: "Email обязателен для заполнения",
+                        email: "Введите корректный email"
+                    },
+                    Password: {
+                        required: "Пароль обязателен для заполнения"
+                    }
+                },
+                errorPlacement: function(error, element) {
+                    var errorId = element.attr("id") + "-error";
+                    $("#" + errorId).text(error.text()).show();
+                },
+                success: function(label, element) {
+                    var errorId = $(element).attr("id") + "-error";
+                    $("#" + errorId).hide();
+                },
+                submitHandler: function(form) {
+                    $("#result").hide().empty();
+
+                    $.ajax({
+                        type: "POST",
+                        url: $(form).attr("action"),
+                        data: $(form).serialize(),
+                        dataType: "json",
+                        success: function(response) {
+                            if (response.success) {
+                                window.location.href = response.redirectUrl;
+                            } else {
+                                $("#result").html(response.message).show();
+                            }
+                        },
+                        error: function() {
+                            $("#result").html("Ошибка при отправке данных. Попробуйте позже.").show();
+                        }
+                    });
+                    return false;
                 }
-            </ul>
-        </div>
-    }
+            });
+        });
+    </script>
 </body>
 </html>
