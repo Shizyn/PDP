@@ -204,6 +204,24 @@
                     this.value = this.value.replace(/\d/g, '');
                 });
 
+            // Добавляем кастомный метод для проверки email
+            $.validator.addMethod("checkEmailAvailable", function(value, element) {
+                var result = true;
+                $.ajax({
+                    url: '@Url.Action("CheckEmailAvailable", "Home")',
+                    type: "POST",
+                    data: {
+                        email: value,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    async: false, // Синхронный запрос для валидации
+                    success: function(response) {
+                        result = response.isAvailable;
+                    }
+                });
+                return result;
+            }, "Этот email уже зарегистрирован");
+
             $("#regForm").validate({
                 rules: {
                     FullName: {
@@ -215,12 +233,12 @@
                     },
                     Email: {
                         required: true,
-                        email: true
+                        email: true,
+                        checkEmailAvailable: true // Используем кастомное правило
                     },
-                            Password: {
+                    Password: {
                         required: true,
-                        minlength: 6,
-                        strongPassword: true
+                        minlength: 6
                     }
                 },
                 messages: {
@@ -235,7 +253,7 @@
                         required: "Email обязателен для заполнения",
                         email: "Введите корректный email"
                     },
-                            Password: {
+                    Password: {
                         required: "Пароль обязателен для заполнения",
                         minlength: "Пароль должен быть не менее 6 символов"
                     }
@@ -254,6 +272,7 @@
                 e.preventDefault();
                 $("#result").hide().empty();
 
+                // Проверяем валидность формы
                 if (!$(this).valid()) {
                     return;
                 }

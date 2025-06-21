@@ -59,7 +59,13 @@ namespace DP.Controllers
             return View(model);
         }
 
-
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CheckEmailAvailable(string email)
+        {
+            bool emailExists = _context.Users.Any(u => u.Email == email);
+            return Json(new { isAvailable = !emailExists });
+        }
 
         [HttpGet]
         public IActionResult RegIn()
@@ -73,6 +79,16 @@ namespace DP.Controllers
         {
             if (ModelState.IsValid)
             {
+                if (_context.Users.Any(u => u.Email == model.Email))
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        errors = new Dictionary<string, List<string>> {
+                    { "Email", new List<string> { "Этот email уже зарегистрирован" } }
+                        }
+                    });
+                }
                 var user = new User
                 {
                     FullName = model.FullName,
