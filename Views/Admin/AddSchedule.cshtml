@@ -254,10 +254,8 @@
 
     <script>
         $(function() {
-            // Инициализация значений
             $('#slotType').val('@((int)Model.Type)');
 
-            // Функция переключения выпадающих списков
             function toggleSelects() {
                 var val = $('#slotType').val();
                 $('#testSelect, #excursionSelect').hide();
@@ -271,7 +269,6 @@
                 }
             }
 
-            // Проверка валидности времени
             function validateTime() {
                 var fromTime = $('#FromTime').val();
                 var toTime = $('#ToTime').val();
@@ -295,22 +292,18 @@
                 return true;
             }
 
-            // Проверка всей формы перед отправкой
             function validateForm() {
                 var isValid = true;
 
-                // Сбросим предыдущие ошибки
                 $('.error-message').hide();
                 $('.error-field').removeClass('error-field');
 
-                // Проверка типа слота
                 if (!$('#slotType').val()) {
                     $('#slotType-error').show();
                     $('#slotType').addClass('error-field');
                     isValid = false;
                 }
 
-                // Проверка выпадающего списка
                 if ($('#slotType').val() === '1') {
                     if (!$('#testDropdown').val()) {
                         $('#testDropdown-error').show();
@@ -325,7 +318,6 @@
                     }
                 }
 
-                // Проверка обязательных полей
                 if (!$('#Date').val()) {
                     $('#Date-error').show();
                     $('#Date').addClass('error-field');
@@ -342,7 +334,6 @@
                     isValid = false;
                 }
 
-                // Проверка времени
                 if (!validateTime()) {
                     isValid = false;
                 }
@@ -350,19 +341,15 @@
                 return isValid;
             }
 
-            // Инициализация
             toggleSelects();
             $('#slotType').change(toggleSelects);
 
-            // Обработка изменения времени
             $('#FromTime, #ToTime').on('change', validateTime);
 
-            // Обработка отправки формы
             $('#scheduleForm').on('submit', function(e) {
                 if (!validateForm()) {
                     e.preventDefault();
 
-                    // Прокрутка к первой ошибке
                     $('html, body').animate({
                         scrollTop: $('.error-field:first').offset().top - 100
                     }, 500);
