@@ -51,6 +51,17 @@
             text-align: left;
         }
 
+        .error-message {
+            color: #d52b1e;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .error-field {
+            border-color: #d52b1e !important;
+            box-shadow: 0 0 0 3px rgba(213, 43, 30, 0.1) !important;
+        }
         .form-group {
             margin-bottom: 15px;
         }
@@ -172,77 +183,69 @@
         {
             <div class="alert alert-success">@TempData["Success"]</div>
         }
-        @if (ViewData["debug"] != null)
+        @if (TempData["Error"] != null)
         {
-            <div class="alert alert-info">@ViewData["debug"]</div>
+            <div class="alert alert-danger">@TempData["Error"]</div>
         }
 
-        <form method="post" class="form-container" asp-action="AddSchedule">
+        <form method="post" class="form-container" asp-action="AddSchedule" id="scheduleForm">
             @Html.AntiForgeryToken()
 
             <div class="form-group">
                 <label for="slotType">Тип слота</label>
-                @{
-                    var slotTypeList = Enum.GetValues(typeof(SlotType))
-                    .Cast<SlotType>()
-                    .Select(t => new SelectListItem
-                    {
-                        Value = ((int)t).ToString(),
-                        Text = t.ToString()
-                    }).ToList();
-                }
-                @Html.DropDownListFor(m => m.Type,
-                         slotTypeList,
-                         "-- Выберите тип --",
-                         new { @id = "slotType" })
+                <select id="slotType" name="Type" class="required-field">
+                    <option value="">-- Выберите тип --</option>
+                    <option value="1">Профпроба</option>
+                    <option value="2">Экскурсия</option>
+                </select>
+                <span id="slotType-error" class="error-message">Выберите тип слота</span>
             </div>
 
             <div id="testSelect" class="form-group">
                 <label for="testDropdown">Проф. проба</label>
-                @Html.DropDownListFor(m => m.SelectedEventId,
-                         Model.Proba,
-                         "-- Выберите профпробу --",
-                         new { @id = "testDropdown" })
+                <select id="testDropdown" name="SelectedEventId" class="required-field">
+                    <option value="">-- Выберите профпробу --</option>
+                    @foreach (var item in Model.Proba)
+                    {
+                        <option value="@item.Value">@item.Text</option>
+                    }
+                </select>
+                <span id="testDropdown-error" class="error-message">Выберите профессиональную пробу</span>
             </div>
 
             <div id="excursionSelect" class="form-group">
                 <label for="excursionDropdown">Экскурсия</label>
-                @Html.DropDownListFor(m => m.SelectedEventId,
-                         Model.Excursions,
-                         "-- Выберите экскурсию --",
-                         new { @id = "excursionDropdown" })
+                <select id="excursionDropdown" name="SelectedEventId" class="required-field">
+                    <option value="">-- Выберите экскурсию --</option>
+                    @foreach (var item in Model.Excursions)
+                    {
+                        <option value="@item.Value">@item.Text</option>
+                    }
+                </select>
+                <span id="excursionDropdown-error" class="error-message">Выберите экскурсию</span>
             </div>
 
             <div class="form-group">
                 <label for="Date">Дата</label>
-                @Html.TextBoxFor(m => m.Date,
-                         "{0:yyyy-MM-dd}",
-                         new { type = "date", @id = "Date", required = "required" })
+                <input type="date" id="Date" name="Date" class="required-field"
+                       value="@(Model.Date.ToString("yyyy-MM-dd"))" />
+                <span id="Date-error" class="error-message">Укажите дату проведения</span>
             </div>
 
             <div class="form-group">
                 <label for="FromTime">Время начала</label>
-                @Html.TextBoxFor(m => m.FromTime,
-                         "{0:hh\\:mm}",
-                         new { type = "time", step = "60", @id = "FromTime", required = "required" })
+                <input type="time" id="FromTime" name="FromTime" class="required-field"
+                       value="@(Model.FromTime.ToString(@"hh\:mm"))" step="60" />
+                <span id="FromTime-error" class="error-message">Укажите время начала</span>
             </div>
 
             <div class="form-group">
                 <label for="ToTime">Время окончания</label>
-                @Html.TextBoxFor(m => m.ToTime,
-                         "{0:hh\\:mm}",
-                         new { type = "time", step = "60", @id = "ToTime", required = "required" })
+                <input type="time" id="ToTime" name="ToTime" class="required-field"
+                       value="@(Model.ToTime.ToString(@"hh\:mm"))" step="60" />
+                <span id="ToTime-error" class="error-message">Укажите время окончания</span>
+                <span id="timeComparison-error" class="error-message" style="display:none;">Время окончания должно быть позже времени начала</span>
             </div>
-
-            @if (!ViewData.ModelState.IsValid)
-            {
-                <div class="alert alert-danger">
-                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                    {
-                        <p>@error.ErrorMessage</p>
-                    }
-                </div>
-            }
 
             <button type="submit" class="btn-submit">Сохранить</button>
             <a href="/Admin/Index" class="btn-back">Вернуться назад</a>
@@ -251,22 +254,120 @@
 
     <script>
         $(function() {
+            // Инициализация значений
+            $('#slotType').val('@((int)Model.Type)');
+
+            // Функция переключения выпадающих списков
             function toggleSelects() {
                 var val = $('#slotType').val();
                 $('#testSelect, #excursionSelect').hide();
-                $('#testDropdown, #excursionDropdown').prop('disabled', true).removeAttr('name');
 
                 if (val === '1') {
                     $('#testSelect').show();
-                    $('#testDropdown').prop('disabled', false).attr('name', 'SelectedEventId');
+                    $('#excursionDropdown').prop('disabled', true);
                 } else if (val === '2') {
                     $('#excursionSelect').show();
-                    $('#excursionDropdown').prop('disabled', false).attr('name', 'SelectedEventId');
+                    $('#testDropdown').prop('disabled', true);
                 }
             }
 
-            $('#slotType').change(toggleSelects);
+            // Проверка валидности времени
+            function validateTime() {
+                var fromTime = $('#FromTime').val();
+                var toTime = $('#ToTime').val();
+
+                if (fromTime && toTime) {
+                    var fromParts = fromTime.split(':');
+                    var toParts = toTime.split(':');
+
+                    var fromMinutes = parseInt(fromParts[0]) * 60 + parseInt(fromParts[1]);
+                    var toMinutes = parseInt(toParts[0]) * 60 + parseInt(toParts[1]);
+
+                    if (fromMinutes >= toMinutes) {
+                        $('#timeComparison-error').show();
+                        $('#FromTime, #ToTime').addClass('error-field');
+                        return false;
+                    }
+                }
+
+                $('#timeComparison-error').hide();
+                $('#FromTime, #ToTime').removeClass('error-field');
+                return true;
+            }
+
+            // Проверка всей формы перед отправкой
+            function validateForm() {
+                var isValid = true;
+
+                // Сбросим предыдущие ошибки
+                $('.error-message').hide();
+                $('.error-field').removeClass('error-field');
+
+                // Проверка типа слота
+                if (!$('#slotType').val()) {
+                    $('#slotType-error').show();
+                    $('#slotType').addClass('error-field');
+                    isValid = false;
+                }
+
+                // Проверка выпадающего списка
+                if ($('#slotType').val() === '1') {
+                    if (!$('#testDropdown').val()) {
+                        $('#testDropdown-error').show();
+                        $('#testDropdown').addClass('error-field');
+                        isValid = false;
+                    }
+                } else if ($('#slotType').val() === '2') {
+                    if (!$('#excursionDropdown').val()) {
+                        $('#excursionDropdown-error').show();
+                        $('#excursionDropdown').addClass('error-field');
+                        isValid = false;
+                    }
+                }
+
+                // Проверка обязательных полей
+                if (!$('#Date').val()) {
+                    $('#Date-error').show();
+                    $('#Date').addClass('error-field');
+                    isValid = false;
+                }
+                if (!$('#FromTime').val()) {
+                    $('#FromTime-error').show();
+                    $('#FromTime').addClass('error-field');
+                    isValid = false;
+                }
+                if (!$('#ToTime').val()) {
+                    $('#ToTime-error').show();
+                    $('#ToTime').addClass('error-field');
+                    isValid = false;
+                }
+
+                // Проверка времени
+                if (!validateTime()) {
+                    isValid = false;
+                }
+
+                return isValid;
+            }
+
+            // Инициализация
             toggleSelects();
+            $('#slotType').change(toggleSelects);
+
+            // Обработка изменения времени
+            $('#FromTime, #ToTime').on('change', validateTime);
+
+            // Обработка отправки формы
+            $('#scheduleForm').on('submit', function(e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+
+                    // Прокрутка к первой ошибке
+                    $('html, body').animate({
+                        scrollTop: $('.error-field:first').offset().top - 100
+                    }, 500);
+                }
+            });
         });
     </script>
 </body>

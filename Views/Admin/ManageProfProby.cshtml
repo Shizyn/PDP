@@ -327,7 +327,10 @@
                                             <td class="action-cell">
                                                 <form method="post" action="/Admin/DeleteEvent">
                                                     <input type="hidden" name="id" value="@eventItem.ID">
-                                                    <button type="submit" class="btn btn-danger">Удалить</button>
+                                                    <button type="submit" class="btn btn-danger"
+                                                            onclick="return confirm('Вы уверены, что хотите удалить событие?')">
+                                                        Удалить
+                                                    </button>
                                                 </form>
                                             </td>
                                         </tr>

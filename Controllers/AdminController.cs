@@ -94,6 +94,7 @@ namespace DP.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult AddSchedule(AddScheduleViewModel vm)
         {
+            // Заполняем списки для выпадающих меню
             vm.Proba = _context.ProfProby
                 .Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Name })
                 .ToList();
@@ -101,17 +102,21 @@ namespace DP.Controllers
                 .Select(m => new SelectListItem { Value = m.Id.ToString(), Text = m.Name })
                 .ToList();
 
-            if (vm.ToTime <= vm.FromTime)
-            {
-                ModelState.AddModelError("", "Время окончания должно быть позже времени начала");
-                return View(vm);
-            }
-
-            var timeRange = $"{vm.FromTime.Hours:00}:{vm.FromTime.Minutes:00}-{vm.ToTime.Hours:00}:{vm.ToTime.Minutes:00}";
-            var date = vm.Date.Date;
-
             try
             {
+                // Проверка времени
+                if (vm.ToTime.TotalMinutes <= vm.FromTime.TotalMinutes)
+                {
+                    ModelState.AddModelError("", "Время окончания должно быть позже времени начала");
+                    return View(vm);
+                }
+
+                // Форматируем временной диапазон
+                var fromTimeStr = vm.FromTime.ToString(@"hh\:mm");
+                var toTimeStr = vm.ToTime.ToString(@"hh\:mm");
+                var timeRange = $"{fromTimeStr}-{toTimeStr}";
+                var date = vm.Date.Date;
+
                 bool slotExists = false;
 
                 if (vm.Type == SlotType.Профпроба)
@@ -153,7 +158,6 @@ namespace DP.Controllers
                     }
 
                     _context.SaveChanges();
-
                     TempData["Success"] = "Слот успешно добавлен!";
                     return RedirectToAction("AddSchedule");
                 }
@@ -165,7 +169,7 @@ namespace DP.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Ошибка при сохранении слота");
-                ModelState.AddModelError("", $"Ошибка: {ex.InnerException?.Message ?? ex.Message}");
+                TempData["Error"] = $"Ошибка: {ex.Message}";
             }
 
             return View(vm);
@@ -379,7 +383,6 @@ namespace DP.Controllers
 
             if (booking != null)
             {
-                // Удаляем связанные файлы
                 foreach (var file in booking.Files.ToList())
                 {
                     _context.UploadedFiles.Remove(file);
@@ -419,25 +422,7 @@ namespace DP.Controllers
             }
             return RedirectToAction("Index");
         }
-        // Метод для удаления окончательной заявки
-        //[HttpPost]
-        //public IActionResult DeleteFinalBooking(int id)
-        //{
-        //    var booking = _context.Bookings.Include(b => b.Files).FirstOrDefault(b => b.ID == id);
-        //    if (booking != null)
-        //    {
-        //        Удаляем все связанные файлы
-        //        if (booking.Files != null && booking.Files.Any())
-        //        {
-        //            _context.UploadedFiles.RemoveRange(booking.Files);
-        //        }
-
-        //        Удаляем саму заявку
-        //        _context.Bookings.Remove(booking);
-        //        _context.SaveChanges();
-        //    }
-        //    return RedirectToAction("Index");
-        //}
+        
 
         [HttpPost]
         public IActionResult Confirm(int id)
