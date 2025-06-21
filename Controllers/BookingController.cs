@@ -410,9 +410,8 @@ namespace DP.Controllers
             return RedirectToAction("Index");
         }
         [HttpGet]
-        public IActionResult DownloadExcelTemplate(string schoolName, int peopleCount, DateTime bookingDate, string timeRange, string eventName)
+        public IActionResult DownloadExcelTemplate(string schoolName, int peopleCount, DateTime bookingDate, string timeRange, string eventName, string profName)
         {
-            // Получаем данные текущего пользователя
             var userEmail = HttpContext.Session.GetString("UserEmail");
             var user = _context.Users.FirstOrDefault(u => u.Email == userEmail);
 
@@ -422,16 +421,24 @@ namespace DP.Controllers
 
             int rowIndex = 1;
 
-            // Шапка с основной информацией о мероприятии
             worksheet.Cells[rowIndex, 1].Value = $"Информация о мероприятии";
             worksheet.Cells[rowIndex, 1].Style.Font.Bold = true;
             worksheet.Cells[rowIndex, 1].Style.Font.Size = 16;
             rowIndex += 2;
 
-            worksheet.Cells[rowIndex, 1].Value = "Мероприятие:";
-            worksheet.Cells[rowIndex, 2].Value = eventName; // Ячейка B2
-            rowIndex++;
-            // Добавляем информацию о дате и времени
+            if (!string.IsNullOrEmpty(profName))
+            {
+                worksheet.Cells[rowIndex, 1].Value = "Профпроба:";
+                worksheet.Cells[rowIndex, 2].Value = profName;
+                rowIndex++;
+            }
+
+            if (!string.IsNullOrEmpty(eventName))
+            {
+                worksheet.Cells[rowIndex, 1].Value = "Мероприятие:";
+                worksheet.Cells[rowIndex, 2].Value = eventName;
+                rowIndex++;
+            }
             worksheet.Cells[rowIndex, 1].Value = "Дата проведения:";
             worksheet.Cells[rowIndex, 2].Value = bookingDate.ToString("dd.MM.yyyy");
             rowIndex++;
@@ -442,9 +449,8 @@ namespace DP.Controllers
 
             worksheet.Cells[rowIndex, 1].Value = "Учебное заведение:";
             worksheet.Cells[rowIndex, 2].Value = schoolName;
-            rowIndex += 2; // Дополнительный отступ
+            rowIndex += 2; 
 
-            // Контактная информация организатора
             worksheet.Cells[rowIndex, 1].Value = "Контактная информация ответственного лица:";
             worksheet.Cells[rowIndex, 1].Style.Font.Bold = true;
             rowIndex++;
@@ -470,9 +476,8 @@ namespace DP.Controllers
                 rowIndex++;
             }
 
-            rowIndex++; // Дополнительный отступ
+            rowIndex++; 
 
-            // Заголовок списка участников
             worksheet.Cells[rowIndex, 1].Value = $"Список участников ({peopleCount} человек)";
             using (ExcelRange range = worksheet.Cells[rowIndex, 1, rowIndex, 8])
             {
@@ -483,23 +488,19 @@ namespace DP.Controllers
             }
             rowIndex++;
 
-            // Заголовки для участников
             worksheet.Cells[rowIndex, 1].Value = "№";
             worksheet.Cells[rowIndex, 2].Value = "ФИО участника";
             worksheet.Cells[rowIndex, 3].Value = "Дата рождения";
             worksheet.Cells[rowIndex, 4].Value = "Школа, класс";
 
-            // Заголовки для сопровождающих
             worksheet.Cells[rowIndex, 6].Value = "№";
             worksheet.Cells[rowIndex, 7].Value = "ФИО сопровождающего";
             worksheet.Cells[rowIndex, 8].Value = "Должность";
 
-            // Стили для заголовков
             ApplyHeaderStyle(worksheet.Cells[rowIndex, 1, rowIndex, 4]);
             ApplyHeaderStyle(worksheet.Cells[rowIndex, 6, rowIndex, 8]);
             rowIndex++;
 
-            // Заполнение участников
             int participantsStartRow = rowIndex;
             for (int i = 1; i <= peopleCount; i++)
             {
@@ -507,13 +508,11 @@ namespace DP.Controllers
                 rowIndex++;
             }
 
-            // Заполнение сопровождающих
             int escortsStartRow = participantsStartRow;
             for (int i = 1; i <= 4; i++)
             {
                 worksheet.Cells[escortsStartRow, 6].Value = i;
 
-                // Первый сопровождающий - текущий пользователь
                 if (i == 1 && user != null)
                 {
                     worksheet.Cells[escortsStartRow, 7].Value = user.FullName ?? "ФИО не указано";
@@ -521,14 +520,11 @@ namespace DP.Controllers
                 escortsStartRow++;
             }
 
-            // Границы таблиц
             ApplyTableStyle(worksheet.Cells[participantsStartRow, 1, participantsStartRow + peopleCount - 1, 4]);
             ApplyTableStyle(worksheet.Cells[participantsStartRow, 6, participantsStartRow + 3, 8]);
 
-            // Автоподбор ширины
             worksheet.Cells.AutoFitColumns();
 
-            // Форматирование столбцов с датами
             worksheet.Column(3).Style.Numberformat.Format = "dd.mm.yyyy";
 
             var stream = new MemoryStream();

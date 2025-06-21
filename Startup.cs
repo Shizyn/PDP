@@ -50,7 +50,7 @@ namespace DP
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller=Booking}/{action=Index}");
+                    pattern: "{controller=Home}/{action=Index}");
             });
         }
     }

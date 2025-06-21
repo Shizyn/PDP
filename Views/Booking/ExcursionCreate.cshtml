@@ -204,7 +204,6 @@
                 <span id="museumError" class="field-validation-error" style="display:none;"></span>
             </div>
 
-            <!-- Группа учебного заведения с дополнительным отступом -->
             <div class="form-group school-group">
                 <label for="schoolName">Учебное заведение:</label>
                 <input type="text" id="schoolName" name="schoolName" required placeholder="Введите название вашего учебного заведения" />
@@ -232,7 +231,7 @@
             </div>
 
             <div class="form-group template-section">
-                <label>Скачать шаблон списка участников (Excel):</label>
+                <label>Заполните все поля для скачивания шаблона списка участников (Excel):</label>
                 <a href="#" id="downloadTemplateLink">Скачать шаблон участников</a>
                 <div class="file-section">
                     <label for="excelFile" style="display: block; margin-top: 10px; margin-bottom: 5px;">Загрузите заполненный файл:</label>
@@ -258,14 +257,12 @@
 
     <script>
         $(document).ready(function() {
-            // Функция очистки ошибок
             function clearErrors() {
                 $('.field-validation-error').each(function() {
                     $(this).hide().text('');
                 });
             }
 
-            // Обработчик изменения полей
             $("input, select").on('input change', function() {
                 clearErrors();
             });
@@ -275,7 +272,6 @@
             const school = $("#schoolName").val();
             const count = $("#peopleCount").val();
 
-            // Проверка только основных обязательных полей
             if (!museum || !school || !count) {
                 $("#downloadTemplateLink")
                     .addClass("disabled-link")
@@ -303,16 +299,13 @@
                 .removeAttr("title");
         }
 
-        // Подписываемся на изменения всех полей
         $("#museumSelect, #schoolName, #peopleCount, #excursionBookingDate, #excursionTimeRange").on("input change", updateDownloadLink);
         updateDownloadLink();
 
-        // Обработчик клика на ссылке скачивания (ИСПРАВЛЕННЫЙ)
         $("#downloadTemplateLink").on("click", function(e) {
             clearErrors();
             let hasError = false;
 
-            // Проверяем только основные поля
             const requiredFields = [
                 {id: "#museumSelect", name: "Музей", errorId: "#museumError"},
                 {id: "#schoolName", name: "Учебное заведение", errorId: "#schoolError"},
@@ -338,7 +331,6 @@
             }
         });
 
-        // Обработчик отправки формы (ОСТАЕТСЯ ПОЛНАЯ ПРОВЕРКА)
         $("#bookingForm").on("submit", function(e) {
             clearErrors();
             let hasError = false;
@@ -380,7 +372,6 @@
             return true;
         });
 
-            // Функционал выбора даты и времени
             console.log("Document ready");
             let availableExcursionDates = [];
 

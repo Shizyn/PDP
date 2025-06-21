@@ -288,9 +288,9 @@
                 @foreach (var booking in Model.Bookings)
                 {
                     <tr style="@(booking.Status == "Новое" ? "background-color:#f2f2f2;" :
-            booking.Status == "Подтверждено" ? "background-color:#c1ffa55e;" :
-            booking.Status == "Отклонено" ? "background-color:#ffa5a557;" :
-            booking.Status == "Завершено" ? "background-color:#e6e6ff;" : "")">
+                    booking.Status == "Подтверждено" ? "background-color:#c1ffa55e;" :
+                    booking.Status == "Отклонено" ? "background-color:#ffa5a557;" :
+                    booking.Status == "Завершено" ? "background-color:#e6e6ff;" : "")">
                         <td>@booking.ProfProba?.Name</td>
                         <td>@booking.User?.FullName</td>
                         <td>@booking.User?.Email</td>
@@ -351,7 +351,6 @@
             </tbody>
         </table>
     }
-    <!-- Заявки на экскурсии -->
     @if (Model.Excursions != null && Model.Excursions.Any())
     {
         <h2>Заявки на экскурсии</h2>
@@ -374,10 +373,10 @@
             <tbody>
                 @foreach (var excursion in Model.Excursions)
                 {
-                    <tr style="@(excursion.Status == "Новое" ? "background-color:#f2f2f2;" :
-            excursion.Status == "Подтверждено" ? "background-color:#c1ffa55e;" :
-            excursion.Status == "Отклонено" ? "background-color:#ffa5a557;" :
-            excursion.Status == "Завершено" ? "background-color:#e6e6ff;" : "")">
+                            <tr style="@(excursion.Status == "Новое" ? "background-color:#f2f2f2;" :
+                        excursion.Status == "Подтверждено" ? "background-color:#c1ffa55e;" :
+                        excursion.Status == "Отклонено" ? "background-color:#ffa5a557;" :
+                        excursion.Status == "Завершено" ? "background-color:#e6e6ff;" : "")">
                         <td>@excursion.Museum?.Name</td>
                         <td>@excursion.User?.FullName</td>
                         <td>@excursion.User?.Email</td>

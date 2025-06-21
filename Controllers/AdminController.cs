@@ -50,7 +50,7 @@ namespace DP.Controllers
             {
                 Bookings = GetBookings(),
                 Excursions = GetExcursionBookings(),
-                Feedbacks = feedbacks // Используем новое свойство
+                Feedbacks = feedbacks 
             };
 
             return View(viewModel);
@@ -101,14 +101,12 @@ namespace DP.Controllers
                 .Select(m => new SelectListItem { Value = m.Id.ToString(), Text = m.Name })
                 .ToList();
 
-            // 1. Исправление проверки времени
             if (vm.ToTime <= vm.FromTime)
             {
                 ModelState.AddModelError("", "Время окончания должно быть позже времени начала");
                 return View(vm);
             }
 
-            // 2. Корректное формирование временного диапазона
             var timeRange = $"{vm.FromTime.Hours:00}:{vm.FromTime.Minutes:00}-{vm.ToTime.Hours:00}:{vm.ToTime.Minutes:00}";
             var date = vm.Date.Date;
 
@@ -118,7 +116,6 @@ namespace DP.Controllers
 
                 if (vm.Type == SlotType.Профпроба)
                 {
-                    // Проверка существования слота с учетом времени
                     slotExists = _context.AvailableSlots
                         .Any(s => s.ProfProbaId == vm.SelectedEventId &&
                                   s.SlotDate == date &&
@@ -126,7 +123,6 @@ namespace DP.Controllers
                 }
                 else if (vm.Type == SlotType.Экскурсия)
                 {
-                    // Проверка для экскурсий
                     slotExists = _context.ExcursionSlots
                         .Any(s => s.MuseumId == vm.SelectedEventId &&
                                   s.SlotDate == date &&
@@ -168,7 +164,6 @@ namespace DP.Controllers
             }
             catch (Exception ex)
             {
-                // Детальное логирование ошибки
                 _logger.LogError(ex, "Ошибка при сохранении слота");
                 ModelState.AddModelError("", $"Ошибка: {ex.InnerException?.Message ?? ex.Message}");
             }
@@ -342,7 +337,7 @@ namespace DP.Controllers
             var excursion = _context.ExcursionBookings.FirstOrDefault(e => e.Id == id);
             if (excursion != null)
             {
-                excursion.Status = "Подтверждена";
+                excursion.Status = "Подтверждено"; 
                 _context.SaveChanges();
             }
             return RedirectToAction("Index");
@@ -523,7 +518,7 @@ namespace DP.Controllers
             var booking = _context.Bookings.FirstOrDefault(b => b.ID == id);
             if (booking != null && booking.Status == "Подтверждено")
             {
-                booking.Status = "Завершено"; // Используем единый статус
+                booking.Status = "Завершено"; 
                 _context.SaveChanges();
             }
             return RedirectToAction("Index");
@@ -535,7 +530,7 @@ namespace DP.Controllers
             var excursion = _context.ExcursionBookings.FirstOrDefault(e => e.Id == id);
             if (excursion != null && excursion.Status == "Подтверждено")
             {
-                excursion.Status = "Завершено"; // Используем единый статус
+                excursion.Status = "Завершено";
                 _context.SaveChanges();
             }
             return RedirectToAction("Index");
