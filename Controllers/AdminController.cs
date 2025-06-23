@@ -20,37 +20,57 @@ namespace DP.Controllers
             _context = context;
             _logger = logger;
         }
-        //public class AdminDashboardViewModel
-        //{
-        //    public List<Booking> Bookings { get; set; }
-        //    public List<ExcursionBooking> Excursions { get; set; }
-        //    public List<Booking> FinalBookings { get; set; }
-        //    public List<Feedback> Feedbacks { get; set; }
-        //}
-        public IActionResult Index()
+
+        public IActionResult Index(DateTime? startDate, DateTime? endDate, string status)
         {
             if (HttpContext.Session.GetString("IsAdmin") != "true")
             {
                 return RedirectToAction("Login");
             }
-            var bookings = _context.Bookings
-                .Include(b => b.ProfProba)
 
-                .ToList();
+            var bookingsQuery = _context.Bookings
+                .Include(b => b.ProfProba)
+                .Include(b => b.User)
+                .Include(b => b.Files)
+                .AsQueryable();
+
+            var excursionsQuery = _context.ExcursionBookings
+                .Include(e => e.Museum)
+                .Include(e => e.User)
+                .Include(e => e.Files)
+                .AsQueryable();
+
+            if (startDate.HasValue)
+            {
+                bookingsQuery = bookingsQuery.Where(b => b.BookingDate >= startDate);
+                excursionsQuery = excursionsQuery.Where(e => e.BookingDate >= startDate);
+            }
+
+            if (endDate.HasValue)
+            {
+                bookingsQuery = bookingsQuery.Where(b => b.BookingDate <= endDate);
+                excursionsQuery = excursionsQuery.Where(e => e.BookingDate <= endDate);
+            }
+
+            if (!string.IsNullOrEmpty(status) && status != "Все")
+            {
+                bookingsQuery = bookingsQuery.Where(b => b.Status == status);
+                excursionsQuery = excursionsQuery.Where(e => e.Status == status);
+            }
 
             var feedbacks = _context.Feedbacks
-        .Include(f => f.Booking)
-            .ThenInclude(b => b.ProfProba)
-        .Include(f => f.ExcursionBooking)
-            .ThenInclude(e => e.Museum)
-        .Include(f => f.User)
-        .ToList();
+                .Include(f => f.Booking)
+                    .ThenInclude(b => b.ProfProba)
+                .Include(f => f.ExcursionBooking)
+                    .ThenInclude(e => e.Museum)
+                .Include(f => f.User)
+                .ToList();
 
             var viewModel = new AdminDashboardViewModel
             {
-                Bookings = GetBookings(),
-                Excursions = GetExcursionBookings(),
-                Feedbacks = feedbacks 
+                Bookings = bookingsQuery.ToList(),
+                Excursions = excursionsQuery.ToList(),
+                Feedbacks = feedbacks
             };
 
             return View(viewModel);

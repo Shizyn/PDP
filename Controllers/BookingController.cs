@@ -32,7 +32,7 @@ namespace DP.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        public IActionResult Index()
+        public IActionResult Index(DateTime? startDate, DateTime? endDate, string status)
         {
             var userEmail = HttpContext.Session.GetString("UserEmail");
             if (userEmail == null)
@@ -42,19 +42,40 @@ namespace DP.Controllers
             if (user == null)
                 return NotFound();
 
-            var bookings = _context.Bookings
+            var bookingsQuery = _context.Bookings
                 .Where(b => b.UserId == user.UserId)
                 .Include(b => b.ProfProba)
                 .Include(b => b.Files)
                 .Include(b => b.User)
-                .ToList();
+                .AsQueryable();
 
-            var excursionBookings = _context.ExcursionBookings
+            var excursionBookingsQuery = _context.ExcursionBookings
                 .Where(e => e.UserId == user.UserId)
                 .Include(e => e.Museum)
                 .Include(e => e.Files)
                 .Include(b => b.User)
-                .ToList();
+                .AsQueryable();
+
+            if (startDate.HasValue)
+            {
+                bookingsQuery = bookingsQuery.Where(b => b.BookingDate >= startDate);
+                excursionBookingsQuery = excursionBookingsQuery.Where(e => e.BookingDate >= startDate);
+            }
+
+            if (endDate.HasValue)
+            {
+                bookingsQuery = bookingsQuery.Where(b => b.BookingDate <= endDate);
+                excursionBookingsQuery = excursionBookingsQuery.Where(e => e.BookingDate <= endDate);
+            }
+
+            if (!string.IsNullOrEmpty(status) && status != "Все")
+            {
+                bookingsQuery = bookingsQuery.Where(b => b.Status == status);
+                excursionBookingsQuery = excursionBookingsQuery.Where(e => e.Status == status);
+            }
+
+            var bookings = bookingsQuery.ToList();
+            var excursionBookings = excursionBookingsQuery.ToList();
 
             var feedbacks = _context.Feedbacks
                 .Where(f => f.UserId == user.UserId)
@@ -62,6 +83,9 @@ namespace DP.Controllers
 
             ViewBag.Feedbacks = feedbacks;
             ViewBag.Excursions = excursionBookings;
+            ViewBag.StatusFilter = status; 
+            ViewBag.StartDate = startDate?.ToString("yyyy-MM-dd"); 
+            ViewBag.EndDate = endDate?.ToString("yyyy-MM-dd"); 
 
             return View(bookings);
         }
